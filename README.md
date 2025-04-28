@@ -5,6 +5,8 @@ MultiPlayer Sketch Tool (C++ IOCP Server, Unity C# Client)
 Sketch + Chat = Sketchat <br/>
 멀티플레이어로 그림을 그리는 응용프로그램. <br/>
 
+[YoutubeLink](https://youtu.be/JGcvxF2Ymkk) <br/>
+
 ## 동기화 요소
 실시간으로 원하는 위치의 픽셀을 변화시키는 정도는 단순하지만, <br/>
 그렸던 그림을 되돌리는 Undo 기능을 넣으면 고려할 점이 많아진다. <br/>
