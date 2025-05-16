@@ -111,6 +111,7 @@ public:
 		std::is_same<T, int16_t>::value ||
 		std::is_same<T, int32_t>::value ||
 		std::is_same<T, int64_t>::value ||
+		std::is_same<T, char>::value ||
 		std::is_same<T, float>::value ||
 		std::is_same<T, double>::value ||
 		std::is_same<T, std::string>::value,
@@ -239,6 +240,7 @@ public:
 		std::is_same<T, int16_t>::value ||
 		std::is_same<T, int32_t>::value ||
 		std::is_same<T, int64_t>::value ||
+		std::is_same<T, char>::value ||
 		std::is_same<T, float>::value ||
 		std::is_same<T, double>::value ||
 		std::is_same<T, std::string>::value ||

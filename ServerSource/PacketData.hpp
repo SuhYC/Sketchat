@@ -4,7 +4,7 @@
 #include <sstream>
 #include <atomic>
 
-const unsigned int PACKET_SIZE = 2048;
+const unsigned int PACKET_SIZE = MAX_SOCKBUF * 2;
 
 // Network IO Packet
 class PacketData
@@ -31,7 +31,12 @@ public:
 
 	void Clear()
 	{
+		if (m_pData == nullptr)
+		{
+			return;
+		}
 		ZeroMemory(m_pData, PACKET_SIZE);
+		ioSize = 0;
 	}
 
 	void Free()

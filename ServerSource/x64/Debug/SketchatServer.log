@@ -1,41 +1,51 @@
 ﻿  main.cpp
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\PacketData.hpp(64,25): warning C4267: '=': 'size_t'에서 'DWORD'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Connection.hpp(388,14): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(142,16): warning C4267: '초기화 중': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(545,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(562,34): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(569,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(581,27): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(596,25): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(607,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(619,27): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(630,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(648,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(664,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(678,25): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\PacketData.hpp(69,25): warning C4267: '=': 'size_t'에서 'DWORD'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Connection.hpp(387,14): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(143,16): warning C4267: '초기화 중': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(547,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(564,34): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(571,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(583,27): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(598,25): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(609,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(621,27): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(632,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(650,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(666,46): warning C4267: '인수': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Serialization.hpp(680,25): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(1,13): warning C4081: 'newline'이(가) 있어야 하는데 ';'이(가) 있습니다.
 C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(1,13): warning C4081: 'newline'이(가) 있어야 하는데 ';'이(가) 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(142,24): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(142,51): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(160,55): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(160,49): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(161,55): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(161,49): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(306,50): warning C4267: '+=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(329,21): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(344,25): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(117,67): warning C4267: 'return': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(194,42): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(194,42): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(306,60): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(306,60): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(329,53): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(329,53): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(21,14): warning C4309: '초기화 중': 상수 값이 잘립니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(21,22): warning C4309: '초기화 중': 상수 값이 잘립니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(21,30): warning C4309: '초기화 중': 상수 값이 잘립니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(140,24): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(140,51): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(158,55): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(158,49): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(159,55): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(159,49): warning C4244: '인수': 'int32_t'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(319,69): warning C4267: '+=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Texture2D.hpp(358,25): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(118,67): warning C4267: 'return': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(139,21): warning C4244: '인수': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(139,17): warning C4244: '인수': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(139,13): warning C4244: '인수': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(195,42): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(195,42): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,72): warning C4838: 'float'에서 'char'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,72): warning C4244: '초기화 중': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,76): warning C4838: 'float'에서 'char'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,76): warning C4244: '초기화 중': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,80): warning C4838: 'float'에서 'char'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(217,80): warning C4244: '초기화 중': 'float'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(335,60): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(335,60): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(358,53): warning C4838: 'unsigned __int64'에서 'uint16_t'(으)로의 변환에는 축소 변환이 필요합니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Room.hpp(358,53): warning C4267: '초기화 중': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\psyc\source\repos\SketchatServer\SketchatServer\RoomManager.hpp(103,39): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\psyc\source\repos\SketchatServer\SketchatServer\RoomManager.hpp(110,17): warning C4267: '초기화 중': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\ReqHandler.hpp(263,46): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\ReqHandler.hpp(414,48): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\ReqHandler.hpp(451,48): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\ReqHandler.hpp(493,40): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\psyc\source\repos\SketchatServer\SketchatServer\ReqHandler.hpp(537,40): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\Job.hpp(172,46): warning C4267: '=': 'size_t'에서 'uint16_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\SketchatServer.hpp(234,55): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\SketchatServer.hpp(273,40): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\psyc\source\repos\SketchatServer\SketchatServer\SketchatServer.hpp(324,40): warning C4267: '=': 'size_t'에서 'uint32_t'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   SketchatServer.vcxproj -> C:\Users\psyc\source\repos\SketchatServer\x64\Debug\SketchatServer.exe

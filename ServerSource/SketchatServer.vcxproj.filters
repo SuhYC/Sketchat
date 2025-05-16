@@ -71,5 +71,8 @@
     <ClInclude Include="Texture2D.hpp">
       <Filter>헤더 파일\Application</Filter>
     </ClInclude>
+    <ClInclude Include="Job.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

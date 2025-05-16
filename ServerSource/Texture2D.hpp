@@ -18,28 +18,26 @@ const uint32_t MAX_STACK = 50;
 class Color
 {
 public:
-	Color() : r(1.0f), g(1.0f), b(1.0f)
+	Color() : r(255), g(255), b(255)
 	{
 
 	}
 
-	Color(float r_, float g_, float b_) : r(r_), g(g_), b(b_) {}
+	Color(char r_, char g_, char b_) : r(r_), g(g_), b(b_) {}
 
-	float r;
-	float g;
-	float b;
-	//float a;
+	char r; // 0~255 의 값으로 표현하고, float으로 치환할 때는 r / 255로 치환하면 된다.
+	char g; // 0~255 의 값으로 표현하고, float으로 치환할 때는 r / 255로 치환하면 된다.
+	char b; // 0~255 의 값으로 표현하고, float으로 치환할 때는 r / 255로 치환하면 된다.
+	//char a; // 미사용.
 
 	Color& operator=(const Color& other_)
 	{
-		if (&other_ == this)
+		if (&other_ != this)
 		{
-			return *this;
+			this->r = other_.r;
+			this->g = other_.g;
+			this->b = other_.b;
 		}
-
-		this->r = other_.r;
-		this->g = other_.g;
-		this->b = other_.b;
 
 		return *this;
 	}
@@ -196,6 +194,15 @@ public:
 
 	}
 
+	void Init()
+	{
+		std::lock_guard<std::mutex> guard(m_mutex);
+
+		initTexture.Init();
+		DrawKeys.clear();
+		DrawCommands.clear();
+	}
+
 	/// <summary>
 	/// 계속해서 들어오는 드래그 동작을 하나의 Command로 만든다.
 	/// 이후 Undo로 하나의 Command씩 지울 수 있게 하기 위함.
@@ -234,6 +241,8 @@ public:
 	void Push(uint32_t Drawkey_)
 	{
 		std::lock_guard<std::mutex> guard(m_mutex);
+		
+		/*
 		if (DrawKeys.size() == MAX_STACK)
 		{
 			uint32_t headkey = *(DrawKeys.begin());
@@ -250,7 +259,7 @@ public:
 				delete pCommand;
 			}
 			
-		}
+		}*/
 		DrawKeys.push_back(Drawkey_);
 	}
 
@@ -287,6 +296,9 @@ public:
 	/// <summary>
     /// [count of pixels:uint][color * count : float * 3 * count][count of Commands:ushort][Command infos]
 	/// [Command info] : [Color : float * 3][width : float][vertices count:uint][[vector2int : int32_t * 2] * vertices count]
+	/// 
+	/// -> [count of commands:ushort][Command infos]
+	/// [Command info] : [Color : float * 3][width : float][vertices count:uint][[vector2int : int32_t * 2] * vertices count]
 	/// </summary>
 	/// <param name="out_"></param>
 	bool GetData(std::string& out_)
@@ -295,20 +307,21 @@ public:
 
 		SerializeLib slib;
 
-		uint32_t size = sizeof(uint32_t) + initTexture.m_height * initTexture.m_width * sizeof(Color); // count of pixels + Texture
-		
+		//uint32_t size = sizeof(uint32_t) + initTexture.m_height * initTexture.m_width * sizeof(Color) + sizeof(uint16_t); // count of pixels + Texture + CommandCount
+		uint32_t size = sizeof(uint16_t);
+
 		for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
 		{
 			auto mapitr = DrawCommands.find(*itr);
 
 			if (mapitr != DrawCommands.end())
 			{
-				size += sizeof(float) * 4 + sizeof(uint32_t) +  // Color + width + vertices count
+				size += sizeof(float) * 4 + sizeof(uint32_t) + sizeof(uint32_t) + // Color + width + vertices count + drawkey
 					sizeof(int32_t) * 2 * mapitr->second->vertices.size(); // vertices count * sizeof(Vector2Int)
 			}
 		}
 
-		bool bRet = slib.Init(size);
+		bool bRet = slib.Init(size+1000);
 
 		if (!bRet)
 		{
@@ -318,6 +331,7 @@ public:
 
 		// ----- Texture -----
 
+		/*
 		bRet = bRet && slib.Push(initTexture.m_height * initTexture.m_width);
 
 		if (!bRet)
@@ -337,7 +351,7 @@ public:
 				std::cerr << "Texture2D::CommandStack::GetData : failed to Push pixels\n";
 				return false;
 			}
-		}
+		}*/
 
 		// ----- Commands -----
 

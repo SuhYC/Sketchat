@@ -272,6 +272,8 @@ private:
 
 		// 방에 있는 모든 유저 정보 전달
 		pRoom->NotifyAllExistUser(userindex_);
+		// 캔버스 정보 전달
+		pRoom->NotifyCanvasInfo(userindex_);
 
 		return eRet;
 	}
@@ -535,6 +537,11 @@ private:
 		stResultMsg.reqNo = 0;
 		stResultMsg.resCode = static_cast<int32_t>(rescode_);
 		stResultMsg.payLoadSize = msg_.length();
+
+		if (stResultMsg.payLoadSize > MAX_PAYLOAD_SIZE)
+		{
+			return;
+		}
 
 		if (!msg_.empty())
 		{

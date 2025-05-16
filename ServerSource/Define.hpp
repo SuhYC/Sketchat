@@ -9,8 +9,9 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "mswsock.lib") // acceptEx()
 
-const unsigned short MAX_SOCKBUF = 1000;
+const unsigned int MAX_SOCKBUF = 1024;
 const unsigned short MAX_WORKTHREAD = 4;
+const unsigned short MAX_JOBTHREAD = 4;
 
 enum class eIOOperation
 {

@@ -11,7 +11,7 @@
 * [PayLoadSize : uint32_t][ReqNo : uint32_t][ResCode : int32_t][PayLoad]
 */
 
-const uint32_t MAX_PAYLOAD_SIZE = 1012;
+const uint32_t MAX_PAYLOAD_SIZE = 2036;
 const uint32_t HEADER_SIZE = 12;
 const uint32_t MAX_ROOM_NAME_LEN = 12;
 const uint32_t MAX_CHATTING_LEN = 80;
@@ -31,7 +31,9 @@ enum class ReqType
 	DRAW,
 	DRAW_END,
 	UNDO,
-	CHAT
+	CHAT,
+
+	LAST = CHAT // 기능 추가시 다시 입력할 것. 가장 마지막 enum을 지정해야한다.
 };
 
 /// <summary>
@@ -49,7 +51,8 @@ enum class InfoType
 	DRAW,
 	DRAW_END,
 	UNDO,
-	CHAT
+	CHAT,
+	NOT_FINISHED // 사실상 서버에서만 수행. Job이 끝나지 않아서 파라미터의 상태를 그대로 다시 큐잉한다.
 };
 
 /// <summary>
@@ -119,9 +122,9 @@ struct DrawParameter
 	int16_t drawPosX;
 	int16_t drawPosY;
 	float width;
-	float r;
-	float g;
-	float b;
+	char r;
+	char g;
+	char b;
 	//float a; // a값은 안쓸거같음.
 };
 
@@ -191,9 +194,9 @@ struct DrawInfo
 	int16_t drawPosX;
 	int16_t drawPosY;
 	float width;
-	float r;
-	float g;
-	float b;
+	char r;
+	char g;
+	char b;
 };
 
 struct DrawEndInfo

@@ -134,6 +134,7 @@
     <ClInclude Include="Connection.hpp" />
     <ClInclude Include="Define.hpp" />
     <ClInclude Include="IOCP.hpp" />
+    <ClInclude Include="Job.hpp" />
     <ClInclude Include="NetworkMessage.hpp" />
     <ClInclude Include="PacketData.hpp" />
     <ClInclude Include="PacketPool.hpp" />

@@ -207,6 +207,7 @@ private:
 
 		while (m_IsRunWorkThread)
 		{
+			// GQCS Logic
 			auto result = GetQueuedCompletionStatus(
 				m_IOCPHandle,
 				&ioSize,
@@ -242,6 +243,8 @@ private:
 			case eIOOperation::SEND:
 				DoSend(pOverlapped, ioSize);
 			}
+
+			// SendMsg Logic
 		}
 
 		return;

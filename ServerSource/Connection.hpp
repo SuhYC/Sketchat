@@ -16,7 +16,7 @@
         memcpy(pRemote, lpOutputBuffer + localSize, remoteSize); \
     } while (0)
 
-const int MAX_RINGBUFFER_SIZE = 4096;
+const int MAX_RINGBUFFER_SIZE = MAX_SOCKBUF * 4;
 
 class Connection
 {
@@ -31,7 +31,6 @@ public:
 
 	virtual ~Connection()
 	{
-
 	}
 
 	void Init()
@@ -244,7 +243,7 @@ public:
 	{
 		std::lock_guard<std::mutex> guard(m_mutex);
 
-		char cstr[MAX_RINGBUFFER_SIZE] = { 0 };
+		char cstr[MAX_RINGBUFFER_SIZE];
 
 		int len = m_RecvBuffer.dequeue(cstr, MAX_RINGBUFFER_SIZE);
 
@@ -433,7 +432,7 @@ private:
 	char mAcceptBuf[64];
 
 	stOverlappedEx m_RecvOverlapped;
-	char mRecvBuf[MAX_SOCKBUF];
+	char mRecvBuf[MAX_SOCKBUF] ;
 
 	RingBuffer m_SendBuffer;
 	RingBuffer m_RecvBuffer;

@@ -64,7 +64,7 @@ public:
 	/// <returns></returns>
 	Room* GetRoomByIndex(int16_t roomidx_)
 	{
-		if (roomidx_ > m_MaxRoom || roomidx_ < 0)
+		if (roomidx_ >= m_MaxRoom || roomidx_ < 0)
 		{
 			return nullptr;
 		}

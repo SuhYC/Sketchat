@@ -27,6 +27,7 @@ public:
 		m_Password.clear();
 		m_MaxUsers = 0; // 방이 비어있다는 의미
 		m_rwlock.store(0); // idle.
+		m_CommandStack.Init();
 
 		return true;
 	}
@@ -290,6 +291,34 @@ public:
 		}
 	}
 
+	/// <summary>
+	/// 캔버스의 상태를 전송하려 하는데 캔버스의 자체 크기가 너무 크다.
+	/// 512 * 512 * pixeldatasize + Command * 50 정도의 크기인데,
+	/// 512 * 512 만 하더라도 25만바이트 이상.
+	/// 픽셀 하나의 정보를 3바이트로 줄여도 78만 바이트 가량을 송신해야한다.
+	///
+	/// 캔버스를 1024 청크로 분류하여 데이터를 256픽셀마다 요청한다.
+	/// 먼저 0번 청크를 요청하기 전, 읽기중인 상태를 기록한다.
+	/// (읽는 중에는 DrawCommand가 생겨도 캔버스를 수정하거나 전파하지 않고 따로 큐에 담는다.)
+	/// 1023번 청크까지 요청이 완료되면 1024번으로 DrawCommand 데이터를 요청하고 읽는중 상태를 조정한다.
+	/// (여러명이 요청하고 있었을 수도 있으니까.)
+	/// 
+	/// 1025개의 청크를 송신하려다보니 링버퍼가 가득차서 한번에 요청할 수 없을 수도 있다.
+	/// 그러므로 JobQueue를 만들어 송신이 끝나지 못한 작업에 대한 정보를 기록한다.
+	/// </summary>
+	/// <param name="userindex_"></param>
+	void NotifyCanvasInfo(const unsigned short userindex_)
+	{
+		std::string msg;
+		if (!m_CommandStack.GetData(msg))
+		{
+			std::cerr << "Room::NotifyCanvasInfo : Failed to Serialize\n";
+			return;
+		}
+
+		SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg);
+	}
+
 	//----- func pointer
 	std::function<void(std::map<unsigned short, User*>&, InfoType, const std::string&)> SendInfoToUsersFunc;
 	std::function<void(const unsigned short, InfoType, const std::string&)> SendInfoFunc;
@@ -361,17 +390,7 @@ private:
 		SendInfoToUsersFunc(m_UserIndexes, InfoType::ROOM_USER_EXITED, msg);
 	}
 
-	void NotifyCanvasInfo(const unsigned short userindex_)
-	{
-		std::string msg;
-		if (!m_CommandStack.GetData(msg))
-		{
-			std::cerr << "Room::NotifyCanvasInfo : Failed to Serialize\n";
-			return;
-		}
-
-		SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg);
-	}
+	
 
 	void NotifyUndo(const unsigned short userindex_, const uint16_t drawNum_)
 	{
