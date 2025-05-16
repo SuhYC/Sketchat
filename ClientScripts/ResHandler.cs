@@ -411,8 +411,10 @@ public class ResHandler
             return;
         }
 
+
+
         CommandStack.Instance.Init();
-        CommandStack.Instance.SetInitTexture(stParam.pixels);
+        //CommandStack.Instance.SetInitTexture(stParam.pixels);
 
         for(int commandidx = 0; commandidx < stParam.CountOfCommands; commandidx++)
         {

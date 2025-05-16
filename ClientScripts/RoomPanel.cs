@@ -30,7 +30,7 @@ public class RoomPanel : MonoBehaviour
     {
         foreach(Transform child in transform)
         {
-            Destroy(child);
+            Destroy(child.gameObject);
         }
     }
 

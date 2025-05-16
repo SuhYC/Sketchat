@@ -39,7 +39,7 @@ public class Serializer
         UNDO,
         CHAT,
 
-        LAST = CHAT
+        LAST = CHAT // 기능 추가시 다시 입력할 것. 가장 마지막 enum을 지정해야한다.
     };
 
     public enum InfoType
@@ -54,7 +54,8 @@ public class Serializer
         DRAW,
         DRAW_END,
         UNDO,
-        CHAT
+        CHAT,
+        NOT_FINISHED // 사실상 서버에서만 수행. Job이 끝나지 않아서 파라미터의 상태를 그대로 다시 큐잉한다.
     };
 
     public struct ReqMessage
@@ -127,9 +128,9 @@ public class Serializer
         public short drawPosX;
         public short drawPosY;
         public float width;
-        public float r;
-        public float g;
-        public float b;
+        public byte r;
+        public byte g;
+        public byte b;
     }
 
     public struct DrawEndParameter
@@ -288,7 +289,7 @@ public class Serializer
             if (typeof(T) == typeof(int) || typeof(T) == typeof(uint) ||
                 typeof(T) == typeof(float) || typeof(T) == typeof(double) ||
                 typeof(T) == typeof(ulong) || typeof(T) == typeof(long) ||
-                typeof(T) == typeof(short) || typeof(T) == typeof(ushort))
+                typeof(T) == typeof(short) || typeof(T) == typeof(ushort) || typeof(T) == typeof(byte))
             {
                 int tSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
 
@@ -451,7 +452,7 @@ public class Serializer
             if (typeof(T) == typeof(int) || typeof(T) == typeof(uint) ||
                 typeof(T) == typeof(float) || typeof(T) == typeof(double) ||
                 typeof(T) == typeof(ulong) || typeof(T) == typeof(long) ||
-                typeof(T) == typeof(short) || typeof(T) == typeof(ushort))
+                typeof(T) == typeof(short) || typeof(T) == typeof(ushort) || typeof(T) == typeof(byte))
             {
                 int tSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
 
@@ -838,13 +839,25 @@ public class Serializer
         dlib.Init(bytes_, (int)size_);
         bool bRet = dlib.Get(ref res_.drawNum) && dlib.Get(ref res_.userNum) &&
             dlib.Get(ref res_.drawPosX) && dlib.Get(ref res_.drawPosY) &&
-            dlib.Get(ref res_.width) &&
-            dlib.Get(ref res_.r) && dlib.Get(ref res_.g) && dlib.Get(ref res_.b);
+            dlib.Get(ref res_.width);
 
         if (!bRet)
         {
             return false;
         }
+
+        byte br = 0, bg = 0, bb = 0;
+
+        bRet = dlib.Get(ref br) && dlib.Get(ref bg) && dlib.Get(ref bb);
+
+        if (!bRet)
+        {
+            return false;
+        }
+
+        res_.r = (float)br / 255;
+        res_.g = (float)bg / 255;
+        res_.b = (float)bb / 255;
 
         return true;
     }
@@ -896,6 +909,7 @@ public class Serializer
 
         // ----- texture -----
 
+        /*
         bool bRet = dlib.Get(ref res_.CountOfPixels);
 
         if(!bRet)
@@ -916,9 +930,9 @@ public class Serializer
                 return false;
             }
         }
-
+        */
         // ----- Commands -----
-        bRet = dlib.Get(ref res_.CountOfCommands);
+        bool bRet = dlib.Get(ref res_.CountOfCommands);
 
         if(!bRet)
         {
@@ -932,14 +946,20 @@ public class Serializer
         {
             ulong verticesSize = 0;
 
-            bRet = bRet && dlib.Get(ref res_.drawkeys[commandidx]) &&
-                dlib.Get(ref res_.CommandInfos[commandidx].DrawColor.r) &&
-                dlib.Get(ref res_.CommandInfos[commandidx].DrawColor.g) &&
-                dlib.Get(ref res_.CommandInfos[commandidx].DrawColor.b) &&
-                dlib.Get(ref res_.CommandInfos[commandidx].DrawWidth) &&
+            uint key = 0;
+            float r = 0f, g = 0f, b = 0f, width = 0f;
+
+            bRet = dlib.Get(ref key) &&
+                dlib.Get(ref r) &&
+                dlib.Get(ref g) &&
+                dlib.Get(ref b) &&
+                dlib.Get(ref width) &&
                 dlib.Get(ref verticesSize);
 
-            if(!bRet)
+            res_.CommandInfos[commandidx] = new DrawCommand(new Color(r,g,b), width);
+            res_.drawkeys[commandidx] = key;
+
+            if (!bRet)
             {
                 return false;
             }

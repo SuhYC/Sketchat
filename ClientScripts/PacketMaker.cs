@@ -27,6 +27,8 @@ public class PacketMaker
 
     public async Task<bool> ReqCreateRoom(string roomName_, string pw_, ushort maxuser_)
     {
+        Debug.Log($"ReqCreateRoom : Req!");
+
         if (maxuser_ < 1)
         {
             Debug.Log($"PacketMaker::ReqCreateRoom : maxUser Cannot Be Under Zero");
@@ -88,6 +90,8 @@ public class PacketMaker
 
     public async Task<bool> ReqSetNickname(string nickname)
     {
+        Debug.Log($"ReqSetNickname : Req!");
+
         if(nickname == null || nickname.Length < 1)
         {
             return false;
@@ -173,7 +177,7 @@ public class PacketMaker
 
         stParam.drawNum = drawNum;
         stParam.drawPosX = (short)pos.x; stParam.drawPosY = (short)pos.y;
-        stParam.r = color.r; stParam.g = color.g; stParam.b = color.b;
+        stParam.r = (byte)(color.r * 255); stParam.g = (byte)(color.g * 255); stParam.b = (byte)(color.b * 255);
         stParam.width = width;
 
         Serializer serializer = new Serializer(Serializer.ActivationMode.SLIB_ONLY);
