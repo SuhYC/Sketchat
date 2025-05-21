@@ -11,9 +11,11 @@ using UnityEngine.XR;
 public class Serializer
 {
     public const int MAX_STRING_SIZE = 1000;
-    public const int MAX_PACKET_SIZE = 1024;
+    public const int MAX_PACKET_SIZE = NetworkManager.IO_BUF_SIZE;
     public const int MAX_ROOM_NAME_LEN = 12;
     public const int MAX_CHATTING_LEN = 80;
+
+    public const int CANVAS_INFO_CHUNK_COUNT_OF_PIXELS = 2048;
 
     public enum ActivationMode
     {
@@ -37,6 +39,7 @@ public class Serializer
         DRAW,
         DRAW_END,
         UNDO,
+        REQ_CANVAS_INFO,
         CHAT,
 
         LAST = CHAT // 기능 추가시 다시 입력할 것. 가장 마지막 enum을 지정해야한다.
@@ -51,6 +54,7 @@ public class Serializer
         ROOM_USER_ENTERED,
         ROOM_USER_EXITED,
         ROOM_CANVAS_INFO,
+        ROOM_DRAWCOMMAND_INFO,
         DRAW,
         DRAW_END,
         UNDO,
@@ -202,8 +206,12 @@ public class Serializer
     /// </summary>
     public struct RoomCanvasInfo
     {
-        public uint CountOfPixels;
-        public Color[] pixels;
+        public ushort chunkidx;
+        public Color32[] pixels;
+    }
+
+    public struct RoomDrawCommandInfo
+    {
         public uint[] drawkeys;
         public ushort CountOfCommands;
         public DrawCommand[] CommandInfos;
@@ -676,7 +684,7 @@ public class Serializer
 
         return true;
     }
-
+    
     public bool Deserialize(byte[] bytes_, uint size_, ref ResMessage res_)
     {
         if(dlib == null)
@@ -908,33 +916,46 @@ public class Serializer
         dlib.Init(bytes_, (int)size_);
 
         // ----- texture -----
-
-        /*
-        bool bRet = dlib.Get(ref res_.CountOfPixels);
+        
+        bool bRet = dlib.Get(ref res_.chunkidx);
 
         if(!bRet)
         {
             return false;
         }
 
-        res_.pixels = new Color[res_.CountOfPixels];
+        res_.pixels = new Color32[CANVAS_INFO_CHUNK_COUNT_OF_PIXELS];
 
-        for(int i = 0; i < res_.CountOfPixels; i++)
+        for(int i = 0; i < CANVAS_INFO_CHUNK_COUNT_OF_PIXELS; i++)
         {
             bRet = bRet && dlib.Get(ref res_.pixels[i].r) &&
                 dlib.Get(ref res_.pixels[i].g) &&
                 dlib.Get(ref res_.pixels[i].b);
 
-            if(!bRet)
+            res_.pixels[i].a = 255;
+
+            if (!bRet)
             {
                 return false;
             }
         }
-        */
+
+        return true;
+    }
+
+    public bool Deserialize(byte[] bytes_, uint size_, ref RoomDrawCommandInfo res_)
+    {
+        if (dlib == null)
+        {
+            return false;
+        }
+
+        dlib.Init(bytes_, (int)size_);
+
         // ----- Commands -----
         bool bRet = dlib.Get(ref res_.CountOfCommands);
 
-        if(!bRet)
+        if (!bRet)
         {
             return false;
         }
@@ -942,12 +963,13 @@ public class Serializer
         res_.drawkeys = new uint[res_.CountOfCommands];
         res_.CommandInfos = new DrawCommand[res_.CountOfCommands];
 
-        for(int commandidx = 0; commandidx < res_.CountOfCommands; commandidx++)
+        for (int commandidx = 0; commandidx < res_.CountOfCommands; commandidx++)
         {
-            ulong verticesSize = 0;
+            int verticesSize = 0;
 
             uint key = 0;
-            float r = 0f, g = 0f, b = 0f, width = 0f;
+            byte r = 0, g = 0, b = 0;
+            float width = 0f;
 
             bRet = dlib.Get(ref key) &&
                 dlib.Get(ref r) &&
@@ -956,7 +978,7 @@ public class Serializer
                 dlib.Get(ref width) &&
                 dlib.Get(ref verticesSize);
 
-            res_.CommandInfos[commandidx] = new DrawCommand(new Color(r,g,b), width);
+            res_.CommandInfos[commandidx] = new DrawCommand(new Color((float)r / 255, (float)g / 255, (float)b / 255, 1f), width);
             res_.drawkeys[commandidx] = key;
 
             if (!bRet)
@@ -966,13 +988,13 @@ public class Serializer
 
             res_.CommandInfos[commandidx].vertices = new Vector2Int[verticesSize];
 
-            for(ulong vertexidx = 0; vertexidx < verticesSize; vertexidx++)
+            for (int vertexidx = 0; vertexidx < verticesSize; vertexidx++)
             {
-                int xval = 0, yval = 0;
+                short xval = 0, yval = 0;
 
                 bRet = bRet && dlib.Get(ref xval) && dlib.Get(ref yval);
 
-                if(!bRet)
+                if (!bRet)
                 {
                     return false;
                 }

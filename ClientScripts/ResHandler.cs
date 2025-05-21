@@ -54,6 +54,9 @@ public class ResHandler
         ResHandleFunc EnterRoom = HandleEnterRoomResponse;
         _resHandleFuncs.Add(ReqType.ENTER_ROOM, EnterRoom);
 
+        ResHandleFunc ReqCanvasInfo = HandleReqCanvasInfoResponse;
+        _resHandleFuncs.Add(ReqType.REQ_CANVAS_INFO, ReqCanvasInfo);
+
         // ----- info -----
         InfoHandleFunc Chat = HandleChat;
         _infoHandleFuncs.Add(InfoType.CHAT, Chat);
@@ -75,6 +78,9 @@ public class ResHandler
 
         InfoHandleFunc RoomCanvasInfo = HandleRoomCanvasInfo;
         _infoHandleFuncs.Add(InfoType.ROOM_CANVAS_INFO, RoomCanvasInfo);
+
+        InfoHandleFunc RoomDrawCommandInfo = HandleRoomDrawCommandInfo;
+        _infoHandleFuncs.Add(InfoType.ROOM_DRAWCOMMAND_INFO, RoomDrawCommandInfo);
     }
 
     public void PushReqMessage(ReqMessage req_)
@@ -114,7 +120,7 @@ public class ResHandler
                 }
                 else
                 {
-                    Debug.Log($"");
+                    Debug.Log($"ResHandler::HandleServerResponse : Type Missing : {reqMsg.type}");
                 }
             }
             catch(InvalidCastException e)
@@ -241,7 +247,7 @@ public class ResHandler
 
                 if (!_serializer.Deserialize(resmsg_.payLoad, resmsg_.payLoadSize, ref res))
                 {
-                    Debug.Log($"ResHandler::HandleCreateRoomRes : Failed to Deserialize.");
+                    Debug.Log($"ResHandler::HandleEnterRoomRes : Failed to Deserialize.");
                     return;
                 }
 
@@ -259,6 +265,11 @@ public class ResHandler
                 UserData.Instance.SetRoomName(roomName);
 
                 SceneManager.LoadScene("DrawScene");
+
+                if(!await PacketMaker.Instance.ReqRoomCanvasInfo())
+                {
+                    Debug.Log($"ResHandler::HandleEnterRoomRes : Failed to Req Canvas Info.");
+                }
 
                 break;
 
@@ -308,6 +319,12 @@ public class ResHandler
         }
 
         return;
+    }
+
+    private async Task HandleReqCanvasInfoResponse(ReqMessage reqmsg_, ResMessage resmsg_)
+    {
+        await Task.CompletedTask;
+        return; 
     }
 
     private void HandleChat(ResMessage resmsg_)
@@ -411,15 +428,28 @@ public class ResHandler
             return;
         }
 
+        if(stParam.chunkidx == 0)
+        {
+            CommandStack.Instance.Init();
+        }
 
+        CommandStack.Instance.SetInitTexture(stParam.chunkidx, stParam.pixels);
+    }
 
-        CommandStack.Instance.Init();
-        //CommandStack.Instance.SetInitTexture(stParam.pixels);
+    private void HandleRoomDrawCommandInfo(ResMessage resmsg_)
+    {
+        RoomDrawCommandInfo stParam = new RoomDrawCommandInfo();
 
-        for(int commandidx = 0; commandidx < stParam.CountOfCommands; commandidx++)
+        if(!_serializer.Deserialize(resmsg_.payLoad, resmsg_.payLoadSize, ref stParam))
+        {
+            Debug.Log($"ResHandler::HandleRoomDrawCommandInfo : Failed to Serialize.");
+            return;
+        }
+
+        for (int commandidx = 0; commandidx < stParam.CountOfCommands; commandidx++)
         {
             uint drawkey = stParam.drawkeys[commandidx];
-            for(int vertexidx = 0; vertexidx < stParam.CommandInfos[commandidx].vertices.Length; vertexidx++)
+            for (int vertexidx = 0; vertexidx < stParam.CommandInfos[commandidx].vertices.Length; vertexidx++)
             {
                 CommandStack.Instance.AddVertexToCommand(drawkey, stParam.CommandInfos[commandidx].vertices[vertexidx], stParam.CommandInfos[commandidx].DrawColor, stParam.CommandInfos[commandidx].DrawWidth);
             }

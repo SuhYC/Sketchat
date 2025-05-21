@@ -39,7 +39,7 @@ public class PacketHandler
 
     private uint[] header;
 
-    private const int MAX_SIZE_OF_PACKET = 4096;
+    private const int MAX_SIZE_OF_PACKET = 8192;
 
     public void Init()
     {

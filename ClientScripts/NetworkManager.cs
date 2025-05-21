@@ -27,6 +27,8 @@ public class NetworkManager : MonoBehaviour
     private NetworkStream _stream;
     private TcpClient _tcpClient;
 
+    public const int IO_BUF_SIZE = 4096;
+
     private bool m_IsRun;
 
     private byte[] _buffer;
@@ -68,8 +70,8 @@ public class NetworkManager : MonoBehaviour
             DontDestroyOnLoad(this.gameObject);
         }
 
-        _buffer = new byte[1024];
-        _SendingData = new byte[1024];
+        _buffer = new byte[IO_BUF_SIZE];
+        _SendingData = new byte[IO_BUF_SIZE];
         _SendBuffer = new RingBuffer();
 
         _PacketHandler = new PacketHandler();

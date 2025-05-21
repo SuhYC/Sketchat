@@ -1,12 +1,16 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CommandStack
 {
-    public const int MAX_STACK = 50;
+    public const int MAX_STACK = 10;
 
     private static CommandStack _instance;
+
+    private Color32[] tmpColorData;
 
     public static CommandStack Instance
     {
@@ -52,7 +56,7 @@ public class CommandStack
             fillColor[i] = Color.white;
 
         initTexture.SetPixels(fillColor);
-        initTexture.Apply();
+        initTexture.Apply(false, false);
     }
 
     /// <summary>
@@ -105,7 +109,7 @@ public class CommandStack
             DrawCommands.Remove(headkey);
 
             DoCommand(initTexture, command);
-            initTexture.Apply();
+            initTexture.Apply(false, false);
         }
 
         DrawKeys.AddLast(DrawKey);
@@ -134,6 +138,8 @@ public class CommandStack
     {
         Texture2D texture = new Texture2D(SketchScreen.canvasWidth, SketchScreen.canvasHeight);
 
+        initTexture.Apply(false, false);
+
         texture.SetPixels(initTexture.GetPixels());
 
         foreach(uint key in DrawKeys)
@@ -148,7 +154,7 @@ public class CommandStack
             DoCommand(texture, command);
         }
 
-        texture.Apply();
+        texture.Apply(false, false);
 
         return texture;
     }
@@ -202,8 +208,33 @@ public class CommandStack
         }
     }
 
-    public void SetInitTexture(Color[] colors_)
+    public void SetInitTexture(ushort chunkidx_, Color32[] colors_)
     {
-        initTexture.SetPixels(colors_);
+        if(colors_.Length != Serializer.CANVAS_INFO_CHUNK_COUNT_OF_PIXELS)
+        {
+            Debug.Log($"CommandStack::SetInitTexture : colors array size incorrect.");
+            return;
+        }
+
+        if(chunkidx_ >= initTexture.width * initTexture.height / Serializer.CANVAS_INFO_CHUNK_COUNT_OF_PIXELS)
+        {
+            Debug.Log($"CommandStack::SetInitTexture : idx error.");
+            return;
+        }
+
+        if(chunkidx_ == 0)
+        {
+            tmpColorData = new Color32[initTexture.width * initTexture.height];
+        }
+
+        Array.Copy(colors_, 0, tmpColorData, chunkidx_ * Serializer.CANVAS_INFO_CHUNK_COUNT_OF_PIXELS, Serializer.CANVAS_INFO_CHUNK_COUNT_OF_PIXELS);
+
+        if(chunkidx_ == initTexture.width * initTexture.height / Serializer.CANVAS_INFO_CHUNK_COUNT_OF_PIXELS - 1)
+        {
+            initTexture.SetPixels32(tmpColorData);
+            initTexture.Apply(false, false);
+        }
+
+        return;
     }
 }

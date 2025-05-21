@@ -27,8 +27,6 @@ public class PacketMaker
 
     public async Task<bool> ReqCreateRoom(string roomName_, string pw_, ushort maxuser_)
     {
-        Debug.Log($"ReqCreateRoom : Req!");
-
         if (maxuser_ < 1)
         {
             Debug.Log($"PacketMaker::ReqCreateRoom : maxUser Cannot Be Under Zero");
@@ -90,8 +88,6 @@ public class PacketMaker
 
     public async Task<bool> ReqSetNickname(string nickname)
     {
-        Debug.Log($"ReqSetNickname : Req!");
-
         if(nickname == null || nickname.Length < 1)
         {
             return false;
@@ -309,6 +305,28 @@ public class PacketMaker
         reqmsg.payLoadSize = (ushort)reqmsg.payLoad.Length;
         reqmsg.reqNo = ++_reqNo;
         reqmsg.type = Serializer.ReqType.ENTER_ROOM;
+
+        byte[] req = null;
+        if (!serializer.Serialize(reqmsg, ref req))
+        {
+            return false;
+        }
+
+        NetworkManager.Instance.PushReq(reqmsg);
+        await NetworkManager.Instance.SendMsg(req, (uint)req.Length);
+
+        return true;
+    }
+
+    public async Task<bool> ReqRoomCanvasInfo()
+    {
+        Serializer serializer = new Serializer(Serializer.ActivationMode.SLIB_ONLY);
+
+        Serializer.ReqMessage reqmsg = new Serializer.ReqMessage();
+
+        reqmsg.payLoadSize = 0;
+        reqmsg.reqNo = ++_reqNo;
+        reqmsg.type = Serializer.ReqType.REQ_CANVAS_INFO;
 
         byte[] req = null;
         if (!serializer.Serialize(reqmsg, ref req))
