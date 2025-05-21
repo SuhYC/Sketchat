@@ -136,7 +136,7 @@ public:
 
 	//----- func pointer
 	std::function<void(std::map<unsigned short, User*>&, InfoType, const std::string&)> SendInfoToUsersFunc;
-	std::function<void(const unsigned short, InfoType, const std::string&)> SendInfoFunc;
+	std::function<bool(const unsigned short, InfoType, const std::string&)> SendInfoFunc;
 
 private:
 	int m_MaxRoom;

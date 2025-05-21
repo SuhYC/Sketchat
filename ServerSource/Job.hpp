@@ -65,7 +65,7 @@ public:
 	{
 		User* pUser = m_userManager->GetUserByConnIndex(m_userindex);
 
-		if (pUser == nullptr || pUser->GetRoomIdx() == -1)
+		if (pUser == nullptr || pUser->GetRoomIdx() != -1)
 		{
 			std::cout << "RoomCreationJob::Execute : invalid req\n";
 
@@ -183,8 +183,6 @@ public:
 
 		// 방에 있는 모든 유저 정보 전달
 		pRoom->NotifyAllExistUser(m_userindex);
-		// 캔버스 정보 전달
-		pRoom->NotifyCanvasInfo(m_userindex);
 
 		return eRet;
 	}
@@ -444,6 +442,56 @@ public:
 	}
 };
 
+class ReqCanvasInfoJob : public Job
+{
+public:
+	ReqCanvasInfoJob(uint16_t userindex_, uint32_t reqNo_, UserManager* um, RoomManager* rm)
+		: Job(userindex_, reqNo_, um, rm), chunkidx(0) {}
+
+	bool Parse(const std::string& param_) override
+	{
+		return true; // 파라미터 따로 없음
+	}
+
+	InfoType Execute() override
+	{
+		User* pUser = m_userManager->GetUserByConnIndex(m_userindex);
+
+		if (pUser == nullptr)
+		{
+			if (chunkidx == 0)
+			{
+				return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
+			}
+			return InfoType::REQ_FAILED;
+		}
+
+		Room* pRoom = m_roomManager->GetRoomByIndex(pUser->GetRoomIdx());
+
+		if (pRoom == nullptr)
+		{
+			if (chunkidx == 0)
+			{
+				return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
+			}
+			return InfoType::REQ_FAILED;
+		}
+
+		while (chunkidx < MAX_CHUNKS_ON_CANVAS_INFO)
+		{
+			if (!pRoom->NotifyCanvasInfo(m_userindex, chunkidx))
+			{
+				return InfoType::NOT_FINISHED; // 버퍼 오버플로 등의 문제로 중단됨.
+			}
+			chunkidx++;
+		}
+
+		return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_SUCCESS);
+	}
+
+	uint16_t chunkidx;
+};
+
 class ChatJob : public Job
 {
 public:
@@ -502,6 +550,7 @@ public:
 		createFuncs[static_cast<size_t>(ReqType::CREATE_ROOM)] = &JobFactory::CreateRoomCreationJob;
 		createFuncs[static_cast<size_t>(ReqType::ENTER_ROOM)] = &JobFactory::CreateEnterRoomJob;
 		createFuncs[static_cast<size_t>(ReqType::REQ_ROOM_INFO)] = &JobFactory::CreateReqRoomInfoJob;
+		createFuncs[static_cast<size_t>(ReqType::REQ_CANVAS_INFO)] = &JobFactory::CreateReqCanvasInfoJob;
 		createFuncs[static_cast<size_t>(ReqType::EXIT_ROOM)] = &JobFactory::CreateExitRoomJob;
 		//createFuncs[static_cast<size_t>(ReqType::EDIT_ROOM_SETTING)] = &JobFactory::CreateRoomCreationJob;
 		createFuncs[static_cast<size_t>(ReqType::SET_NICKNAME)] = &JobFactory::CreateSetNicknameJob;
@@ -576,6 +625,11 @@ private:
 	Job* CreateReqRoomInfoJob(uint16_t userindex_, uint32_t reqNo_)
 	{
 		return new ReqRoomInfoJob(userindex_, reqNo_, m_userManager, m_roomManager);
+	}
+
+	Job* CreateReqCanvasInfoJob(uint16_t userindex_, uint32_t reqNo_)
+	{
+		return new ReqCanvasInfoJob(userindex_, reqNo_, m_userManager, m_roomManager);
 	}
 
 	Job* CreateDrawStartJob(uint16_t userindex_, uint32_t reqNo_)

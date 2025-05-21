@@ -33,7 +33,7 @@ public:
 	/// 현재 방에 입장해있는 상태가 아니면 -1
 	/// </summary>
 	/// <param name="roomidx_"></param>
-	void SetRoomIdx(uint16_t roomidx_) noexcept
+	void SetRoomIdx(int16_t roomidx_) noexcept
 	{
 		m_roomIdx.store(roomidx_);
 		return;
@@ -48,7 +48,7 @@ public:
 	/// 현재 방에 입장해있는 상태가 아니면 -1반환
 	/// </summary>
 	/// <returns></returns>
-	uint16_t GetRoomIdx() const noexcept { return m_roomIdx; }
+	int16_t GetRoomIdx() const noexcept { return m_roomIdx; }
 
 	void SetName(std::string& str) noexcept
 	{

@@ -63,9 +63,7 @@ public:
 			[this](const uint16_t userindex_,
 				InfoType rescode_,
 				const std::string& msg_)
-			{
-				SendInfoMsg(userindex_, rescode_, msg_);
-			};
+			-> bool { return SendInfoMsg(userindex_, rescode_, msg_); };
 
 		auto SendInfoToUsers =
 			[this](const std::map<uint16_t, User*> users_,
@@ -215,7 +213,7 @@ private:
 			}
 			else
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				std::this_thread::sleep_for(std::chrono::milliseconds(30));
 			}
 		}
 
@@ -264,7 +262,7 @@ private:
 		return resCode_;
 	}
 
-	void SendInfoMsg(const unsigned short userindex_, InfoType rescode_, const std::string& msg_)
+	bool SendInfoMsg(const unsigned short userindex_, InfoType rescode_, const std::string& msg_)
 	{
 		ResMessage stResultMsg;
 
@@ -274,7 +272,9 @@ private:
 
 		if (stResultMsg.payLoadSize > MAX_PAYLOAD_SIZE)
 		{
-			return;
+			std::cerr << "SketchatServer::SendInfoMsg : Too Long Msg.\n";
+			std::cerr << "Msg Size : " << stResultMsg.payLoadSize << "bytes.\n";
+			return false;
 		}
 
 		if (!msg_.empty())
@@ -286,15 +286,15 @@ private:
 		Serializer serializer;
 		if (!serializer.Serialize(stResultMsg, msg))
 		{
-			std::cerr << "ReqHandler::SendInfoMsg : Failed to Make Jsonstr\n";
-			return;
+			std::cerr << "SketchatServer::SendInfoMsg : Failed to Make Jsonstr\n";
+			return false;
 		}
 
 		PacketData* packet = m_PacketPool->Allocate();
 		if (packet == nullptr)
 		{
-			std::cerr << "ReqHandler::SendInfoMsg : Failed to Allocate Packet\n";
-			return;
+			std::cerr << "SketchatServer::SendInfoMsg : Failed to Allocate Packet\n";
+			return false;
 		}
 
 		packet->Init(msg);
@@ -303,11 +303,12 @@ private:
 		{
 			// 송신 실패
 			m_PacketPool->Deallocate(packet);
-			std::cerr << "ReqHandler::SendInfoMsg : Failed to Send Msg\n";
+			std::cout << "SketchatServer::SendInfoMsg : Need To Requeue.\n";
+			return false;
 		}
 
 		m_PacketPool->Deallocate(packet);
-		return;
+		return true;
 	}
 
 	void SendInfoMsgToUsers(const std::map<unsigned short, User*>& users, InfoType rescode_, const std::string& msg_)

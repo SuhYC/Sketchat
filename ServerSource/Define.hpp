@@ -9,7 +9,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "mswsock.lib") // acceptEx()
 
-const unsigned int MAX_SOCKBUF = 1024;
+const unsigned int MAX_SOCKBUF = 4096;
 const unsigned short MAX_WORKTHREAD = 4;
 const unsigned short MAX_JOBTHREAD = 4;
 
@@ -26,21 +26,4 @@ struct stOverlappedEx
 	unsigned short m_userIndex;
 	WSABUF m_wsaBuf;
 	eIOOperation m_eOperation;
-};
-
-class ToJsonException : public std::exception
-{
-private:
-	std::string message;
-
-public:
-	ToJsonException(const std::string& msg) : message(msg)
-	{
-
-	}
-
-	const char* what() const noexcept override
-	{
-		return message.c_str();
-	}
 };

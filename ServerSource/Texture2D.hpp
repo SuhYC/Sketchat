@@ -13,7 +13,7 @@
 
 const uint32_t CANVAS_WIDTH = 512;
 const uint32_t CANVAS_HEIGHT = 512;
-const uint32_t MAX_STACK = 50;
+const uint32_t MAX_STACK = 10;
 
 class Color
 {
@@ -46,9 +46,9 @@ public:
 class Vector2Int
 {
 public:
-	Vector2Int(int32_t x_, int32_t y_) : x(x_), y(y_) {}
+	Vector2Int(int16_t x_, int16_t y_) : x(x_), y(y_) {}
 
-	int32_t x, y;
+	int16_t x, y;
 };
 
 
@@ -234,15 +234,14 @@ public:
 
 	/// <summary>
 	/// 완성된 Command를 Queuing하여 Undo할 수 있도록 만든다.
-	/// 50회 까지 기록하며, 50회를 넘어가면 가장 오래된 Command를
+	/// 50회 까지 기록하며, 10회를 넘어가면 가장 오래된 Command를
 	/// Texture에 융화시킨다.
 	/// </summary>
 	/// <param name="Drawkey_"></param>
 	void Push(uint32_t Drawkey_)
 	{
 		std::lock_guard<std::mutex> guard(m_mutex);
-		
-		/*
+
 		if (DrawKeys.size() == MAX_STACK)
 		{
 			uint32_t headkey = *(DrawKeys.begin());
@@ -258,8 +257,7 @@ public:
 				initTexture.DoCommand(pCommand);
 				delete pCommand;
 			}
-			
-		}*/
+		}
 		DrawKeys.push_back(Drawkey_);
 	}
 
@@ -299,109 +297,142 @@ public:
 	/// 
 	/// -> [count of commands:ushort][Command infos]
 	/// [Command info] : [Color : float * 3][width : float][vertices count:uint][[vector2int : int32_t * 2] * vertices count]
+	/// 
+	/// 
+	/// todo. chunkidx 에 맞게 정보를 1kB단위 이하로 전달.
+	/// chunkidx 0 ~ 1023 : canvas, 1024 : drawcommand.
+	/// canvas 정보를 가져가는건 256픽셀씩 가져가면 된다. -> 2048픽셀, 128청크 + Command
+	/// 
+	/// 데이터를 받아가기 시작한 시점에서 drawcommand가 캔버스에 적용되지 않도록 큐의 길이 제한(50)을 없애고,
+	/// 데이터를 모두 받아간 시점에서 큐의 길이 제한을 넘은 데이터를 처리하여 캔버스에 적용할 수 있도록 한다.
+	/// 
+	/// 데이터를 받아가는 동안에는 캔버스의 정보에는 락이 필요 없다. (수정되지 않기 때문)
+	/// drawcommand를 받아가는 동안에는 락을 건다.
+	/// 
+	/// drawcommand도 분할해서 전송할 것이 아니라면 하나의 drawcommand는 40바이트 이내여야한다.
+	/// 
 	/// </summary>
 	/// <param name="out_"></param>
-	bool GetData(std::string& out_)
+	bool GetData(const unsigned short chunkidx_, std::string& out_)
 	{
+		if (chunkidx_ >= MAX_CHUNKS_ON_CANVAS_INFO)
+		{
+			return false;
+		}
+
 		std::lock_guard<std::mutex> guard(m_mutex);
 
 		SerializeLib slib;
 
-		//uint32_t size = sizeof(uint32_t) + initTexture.m_height * initTexture.m_width * sizeof(Color) + sizeof(uint16_t); // count of pixels + Texture + CommandCount
-		uint32_t size = sizeof(uint16_t);
-
-		for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
-		{
-			auto mapitr = DrawCommands.find(*itr);
-
-			if (mapitr != DrawCommands.end())
-			{
-				size += sizeof(float) * 4 + sizeof(uint32_t) + sizeof(uint32_t) + // Color + width + vertices count + drawkey
-					sizeof(int32_t) * 2 * mapitr->second->vertices.size(); // vertices count * sizeof(Vector2Int)
-			}
-		}
-
-		bool bRet = slib.Init(size+1000);
-
-		if (!bRet)
-		{
-			std::cerr << "Texture2D::CommandStack::GetData : failed to allocate buffer.\n";
-			return false;
-		}
-
 		// ----- Texture -----
-
-		/*
-		bRet = bRet && slib.Push(initTexture.m_height * initTexture.m_width);
-
-		if (!bRet)
+		if (chunkidx_ < MAX_CHUNKS_ON_CANVAS_INFO - 1)
 		{
-			std::cerr << "Texture2D::CommandStack::GetData : failed to Push count of pixels\n";
-			return false;
-		}
+			uint32_t PIXELS_ON_CHUNK = 2048;
+			uint32_t size = PIXELS_ON_CHUNK * sizeof(Color) + sizeof(uint16_t); // pixel * 256 + chunkidx
 
-		for (int i = 0; i < initTexture.m_height * initTexture.m_width; i++)
-		{
-			bRet = bRet && slib.Push(initTexture.m_pixels[i].r) &&
-				slib.Push(initTexture.m_pixels[i].g) && 
-				slib.Push(initTexture.m_pixels[i].b);
+			bool bRet = slib.Init(size);
 
 			if (!bRet)
 			{
-				std::cerr << "Texture2D::CommandStack::GetData : failed to Push pixels\n";
+				std::cerr << "Texture2D::CommandStack::GetData : failed to Allocate memory\n";
 				return false;
 			}
-		}*/
 
-		// ----- Commands -----
-
-		uint16_t commandCount = DrawKeys.size();
-		bRet = bRet && slib.Push(commandCount);
-
-		if (!bRet)
-		{
-			std::cerr << "Texture2D::CommandStack::GetData : failed to Push Command count\n";
-			return false;
-		}
-
-		for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
-		{
-			bRet = slib.Push(*itr);
+			bRet = slib.Push(chunkidx_);
 
 			if (!bRet)
 			{
-				std::cerr << "Texture2D::CommandStack::GetData : failed to Push drawkey\n";
+				std::cerr << "Texture2D::CommandStack::GetData : failed to Push chunkidx\n";
 				return false;
 			}
 
-			auto mapitr = DrawCommands.find(*itr);
-
-			if (mapitr != DrawCommands.end())
+			for (int i = PIXELS_ON_CHUNK * chunkidx_; i < PIXELS_ON_CHUNK * (chunkidx_ + 1); i++)
 			{
-				bRet = bRet && slib.Push(mapitr->second->DrawColor.r) &&
-					slib.Push(mapitr->second->DrawColor.g) &&
-					slib.Push(mapitr->second->DrawColor.b) &&
-					slib.Push(mapitr->second->DrawWidth) &&
-					slib.Push(mapitr->second->vertices.size());
+				bRet = bRet && slib.Push(initTexture.m_pixels[i].r) &&
+					slib.Push(initTexture.m_pixels[i].g) &&
+					slib.Push(initTexture.m_pixels[i].b);
 
 				if (!bRet)
 				{
-					std::cerr << "Texture2D::CommandStack::GetData : failed to Push Command\n";
+					std::cerr << "Texture2D::CommandStack::GetData : failed to Push pixels\n";
+					return false;
+				}
+			}
+
+		}
+		// ----- Commands -----
+		else if (chunkidx_ == MAX_CHUNKS_ON_CANVAS_INFO - 1)
+		{
+			uint32_t size = sizeof(uint16_t);
+
+			for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
+			{
+				auto mapitr = DrawCommands.find(*itr);
+
+				if (mapitr != DrawCommands.end())
+				{
+					size += sizeof(char) * 3 + sizeof(float) + sizeof(uint32_t) + sizeof(uint32_t) + // Color + width + vertices count + drawkey
+						sizeof(int32_t) * 2 * mapitr->second->vertices.size(); // vertices count * sizeof(Vector2Int)
+				}
+			}
+
+			bool bRet = slib.Init(size);
+
+			if (!bRet)
+			{
+				std::cerr << "Texture2D::CommandStack::GetData : failed to allocate buffer.\n";
+				return false;
+			}
+
+			uint16_t commandCount = DrawKeys.size();
+			bRet = bRet && slib.Push(commandCount);
+
+			if (!bRet)
+			{
+				std::cerr << "Texture2D::CommandStack::GetData : failed to Push Command count\n";
+				return false;
+			}
+
+			for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
+			{
+				bRet = slib.Push(*itr);
+
+				if (!bRet)
+				{
+					std::cerr << "Texture2D::CommandStack::GetData : failed to Push drawkey\n";
 					return false;
 				}
 
-				for (auto vertexitr = mapitr->second->vertices.begin(); vertexitr != mapitr->second->vertices.end(); vertexitr++)
+				auto mapitr = DrawCommands.find(*itr);
+
+				if (mapitr != DrawCommands.end())
 				{
-					bRet = bRet && slib.Push(vertexitr->x) &&
-						slib.Push(vertexitr->y);
+					bRet = bRet && slib.Push(mapitr->second->DrawColor.r) &&
+						slib.Push(mapitr->second->DrawColor.g) &&
+						slib.Push(mapitr->second->DrawColor.b) &&
+						slib.Push(mapitr->second->DrawWidth) &&
+						slib.Push(static_cast<int32_t>(mapitr->second->vertices.size()));
 
 					if (!bRet)
 					{
-						std::cerr << "Texture2D::CommandStack::GetData : failed to Push vertex\n";
+						std::cerr << "Texture2D::CommandStack::GetData : failed to Push Command\n";
 						return false;
+					}
+
+					for (auto vertexitr = mapitr->second->vertices.begin(); vertexitr != mapitr->second->vertices.end(); vertexitr++)
+					{
+						bRet = bRet && slib.Push(vertexitr->x) &&
+							slib.Push(vertexitr->y);
+
+						if (!bRet)
+						{
+							std::cerr << "Texture2D::CommandStack::GetData : failed to Push vertex\n";
+							return false;
+						}
 					}
 				}
 			}
+
 		}
 
 		out_.resize(slib.GetSize());

@@ -11,10 +11,11 @@
 * [PayLoadSize : uint32_t][ReqNo : uint32_t][ResCode : int32_t][PayLoad]
 */
 
-const uint32_t MAX_PAYLOAD_SIZE = 2036;
 const uint32_t HEADER_SIZE = 12;
+const uint32_t MAX_PAYLOAD_SIZE = PACKET_SIZE - HEADER_SIZE;
 const uint32_t MAX_ROOM_NAME_LEN = 12;
 const uint32_t MAX_CHATTING_LEN = 80;
+const uint16_t MAX_CHUNKS_ON_CANVAS_INFO = 129;
 
 /// <summary>
 /// 클라이언트 -> 서버로 요청하는 경우
@@ -31,6 +32,7 @@ enum class ReqType
 	DRAW,
 	DRAW_END,
 	UNDO,
+	REQ_CANVAS_INFO,
 	CHAT,
 
 	LAST = CHAT // 기능 추가시 다시 입력할 것. 가장 마지막 enum을 지정해야한다.
@@ -48,6 +50,7 @@ enum class InfoType
 	ROOM_USER_ENTERED,
 	ROOM_USER_EXITED,
 	ROOM_CANVAS_INFO,
+	ROOM_DRAWCOMMAND_INFO,
 	DRAW,
 	DRAW_END,
 	UNDO,

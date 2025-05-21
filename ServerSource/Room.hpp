@@ -307,21 +307,39 @@ public:
 	/// 그러므로 JobQueue를 만들어 송신이 끝나지 못한 작업에 대한 정보를 기록한다.
 	/// </summary>
 	/// <param name="userindex_"></param>
-	void NotifyCanvasInfo(const unsigned short userindex_)
+	bool NotifyCanvasInfo(const unsigned short userindex_, const unsigned short chunkidx_)
 	{
 		std::string msg;
-		if (!m_CommandStack.GetData(msg))
+		if (!m_CommandStack.GetData(chunkidx_, msg))
 		{
 			std::cerr << "Room::NotifyCanvasInfo : Failed to Serialize\n";
-			return;
+			return false;
 		}
 
-		SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg);
+		// DrawCommand
+		if (chunkidx_ == MAX_CHUNKS_ON_CANVAS_INFO - 1)
+		{
+			if (!SendInfoFunc(userindex_, InfoType::ROOM_DRAWCOMMAND_INFO, msg))
+			{
+				return false;
+			}
+		}
+		// Canvas
+		else
+		{
+			if (!SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg))
+			{
+				return false;
+			}
+		}
+
+
+		return true;
 	}
 
 	//----- func pointer
 	std::function<void(std::map<unsigned short, User*>&, InfoType, const std::string&)> SendInfoToUsersFunc;
-	std::function<void(const unsigned short, InfoType, const std::string&)> SendInfoFunc;
+	std::function<bool(const unsigned short, InfoType, const std::string&)> SendInfoFunc;
 
 
 private:
@@ -428,9 +446,10 @@ private:
 		return m_rwlock.compare_exchange_strong(expected, -1);
 	}
 
-	void Write_Unlock()
+	bool Write_Unlock()
 	{
-		m_rwlock.store(0);
+		int32_t expected = -1;
+		return m_rwlock.compare_exchange_strong(expected, 0);
 	}
 
 	std::string m_RoomName;
@@ -460,13 +479,6 @@ private:
 	/// value != 0 : cant write
 	/// 
 	/// try_lock의 느낌으로 구현해보자.
-	/// 
-	/// 굳이 shared_mutex를 쓰지 않은 이유는 IOCP구조상 클라이언트와 스레드를 1:1매칭해줄 수 없다.
-	/// 지금 구현하려는 동작이 dragStart - dragging - dragEnd로 네트워크 요청하며
-	/// dragStart에서 lock을 걸고, dragEnd에서 unlock하는 형태로 만들려고 하는데
-	/// 
-	/// 동일한 스레드가 lock과 unlock을 시도하도록 유도하기 어려우므로
-	/// atomic을 이용해 간단한 읽기쓰기락을 만든다.
 	/// </summary>
 	std::atomic<int32_t> m_rwlock;
 };

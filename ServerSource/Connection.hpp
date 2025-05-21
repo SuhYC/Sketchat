@@ -16,7 +16,8 @@
         memcpy(pRemote, lpOutputBuffer + localSize, remoteSize); \
     } while (0)
 
-const int MAX_RINGBUFFER_SIZE = MAX_SOCKBUF * 4;
+const int MAX_SEND_RINGBUFFER_SIZE = MAX_SOCKBUF * 32;
+const int MAX_RECV_RINGBUFFER_SIZE = MAX_SOCKBUF;
 
 class Connection
 {
@@ -25,8 +26,8 @@ public:
 	{
 		Init();
 		BindAcceptEx();
-		m_SendBuffer.Init(MAX_RINGBUFFER_SIZE);
-		m_RecvBuffer.Init(MAX_RINGBUFFER_SIZE);
+		m_SendBuffer.Init(MAX_SEND_RINGBUFFER_SIZE);
+		m_RecvBuffer.Init(MAX_RECV_RINGBUFFER_SIZE);
 	}
 
 	virtual ~Connection()
@@ -104,22 +105,25 @@ public:
 		return true;
 	}
 
-	void SendMsg(PacketData* pData_)
+	bool SendMsg(PacketData* pData_)
 	{
 		if (pData_ == nullptr)
 		{
-			return;
+			return false;
 		}
 
 		if (m_IsConnected.load() == false)
 		{
-			delete pData_;
-			return;
+			//delete pData_;
+			return false;
 		}
 
 		std::lock_guard<std::mutex> guard(m_mutex);
 
-		m_SendBuffer.enqueue(pData_->GetData(), pData_->GetSize());
+		if (!m_SendBuffer.enqueue(pData_->GetData(), pData_->GetSize()))
+		{
+			return false;
+		}
 
 		DWORD header = 0;
 		CopyMemory(&header, m_SendingBuffer, sizeof(DWORD));
@@ -129,12 +133,12 @@ public:
 			SendIO();
 		}
 
-		return;
+		return true;
 	}
 
 	bool SendIO()
 	{
-		int datasize = m_SendBuffer.dequeue(m_SendingBuffer, MAX_SOCKBUF - 1);
+		int datasize = m_SendBuffer.dequeue(m_SendingBuffer, MAX_SOCKBUF);
 
 		ZeroMemory(&m_SendOverlapped, sizeof(stOverlappedEx));
 
@@ -243,9 +247,9 @@ public:
 	{
 		std::lock_guard<std::mutex> guard(m_mutex);
 
-		char cstr[MAX_RINGBUFFER_SIZE];
+		char cstr[MAX_RECV_RINGBUFFER_SIZE];
 
-		int len = m_RecvBuffer.dequeue(cstr, MAX_RINGBUFFER_SIZE);
+		int len = m_RecvBuffer.dequeue(cstr, MAX_RECV_RINGBUFFER_SIZE);
 
 		if (len == 0)
 		{

@@ -62,9 +62,7 @@ public:
 			return false;
 		}
 
-		pConnection->SendMsg(pPacket_);
-
-		return true;
+		return pConnection->SendMsg(pPacket_);
 	}
 
 	void EndServer()
