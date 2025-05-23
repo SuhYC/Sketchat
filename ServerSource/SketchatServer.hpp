@@ -99,7 +99,7 @@ private:
 
 	void OnReceive(const unsigned short index_, char* pData_, const DWORD ioSize_) override
 	{
-		std::cout << "RPGServer::OnReceive : RecvMsg : size:" << ioSize_ << "\n";
+		//std::cout << "RPGServer::OnReceive : RecvMsg : size:" << ioSize_ << "\n";
 
 		StoreMsg(index_, pData_, ioSize_);
 
@@ -116,7 +116,7 @@ private:
 
 			std::string req(buf, len);
 
-			std::cout << "SketchatServer::OnReceive : req size : " << len << ".\n";
+			//std::cout << "SketchatServer::OnReceive : req size : " << len << ".\n";
 
 			Job* pJob = m_JobFactory.CreateJob(index_, req);
 
@@ -127,16 +127,6 @@ private:
 			}
 
 			JobQueue.push(pJob);
-
-			//if (!m_ReqHandler.HandleReq(index_, req))
-			//{
-			//	std::cerr << "RPGServer::OnReceive : Failed to HandleReq\n";
-			//	return;
-			//}
-			//else
-			//{
-			//	//std::cout << "RPGServer::OnReceive : " << req << '\n';
-			//}
 		}
 		return;
 	}
@@ -286,7 +276,7 @@ private:
 		Serializer serializer;
 		if (!serializer.Serialize(stResultMsg, msg))
 		{
-			std::cerr << "SketchatServer::SendInfoMsg : Failed to Make Jsonstr\n";
+			std::cerr << "SketchatServer::SendInfoMsg : Failed to Serialize\n";
 			return false;
 		}
 
@@ -303,7 +293,7 @@ private:
 		{
 			// 송신 실패
 			m_PacketPool->Deallocate(packet);
-			std::cout << "SketchatServer::SendInfoMsg : Need To Requeue.\n";
+			//std::cout << "SketchatServer::SendInfoMsg : Need To Requeue.\n";
 			return false;
 		}
 

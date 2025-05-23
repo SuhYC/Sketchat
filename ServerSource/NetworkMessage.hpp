@@ -15,7 +15,8 @@ const uint32_t HEADER_SIZE = 12;
 const uint32_t MAX_PAYLOAD_SIZE = PACKET_SIZE - HEADER_SIZE;
 const uint32_t MAX_ROOM_NAME_LEN = 12;
 const uint32_t MAX_CHATTING_LEN = 80;
-const uint16_t MAX_CHUNKS_ON_CANVAS_INFO = 129;
+const uint16_t MAX_CHUNKS_ON_CANVAS_INFO = 128; // CanvasInfo
+const uint16_t MAX_CHUNKS_ON_DRAWCOMMAND = 10; // CommandInfo
 
 /// <summary>
 /// 클라이언트 -> 서버로 요청하는 경우
@@ -31,6 +32,7 @@ enum class ReqType
 	DRAW_START,
 	DRAW,
 	DRAW_END,
+	CUT_THE_LINE,
 	UNDO,
 	REQ_CANVAS_INFO,
 	CHAT,

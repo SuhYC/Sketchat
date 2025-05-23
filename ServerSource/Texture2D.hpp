@@ -43,6 +43,8 @@ public:
 	}
 };
 
+const uint32_t MAX_VERTICES_ON_DRAWCOMMAND = (PACKET_SIZE - sizeof(Color) - sizeof(float) - HEADER_SIZE) / 4;
+
 class Vector2Int
 {
 public:
@@ -66,6 +68,11 @@ public:
 
 	void Push(Vector2Int& vertex)
 	{
+		if (vertices.size() >= MAX_VERTICES_ON_DRAWCOMMAND)
+		{
+			return;
+		}
+
 		if (vertices.size() == vertices.capacity())
 		{
 			vertices.reserve(vertices.size() * 2);
@@ -292,30 +299,15 @@ public:
 	}
 
 	/// <summary>
-    /// [count of pixels:uint][color * count : float * 3 * count][count of Commands:ushort][Command infos]
-	/// [Command info] : [Color : float * 3][width : float][vertices count:uint][[vector2int : int32_t * 2] * vertices count]
-	/// 
-	/// -> [count of commands:ushort][Command infos]
-	/// [Command info] : [Color : float * 3][width : float][vertices count:uint][[vector2int : int32_t * 2] * vertices count]
-	/// 
-	/// 
-	/// todo. chunkidx 에 맞게 정보를 1kB단위 이하로 전달.
-	/// chunkidx 0 ~ 1023 : canvas, 1024 : drawcommand.
-	/// canvas 정보를 가져가는건 256픽셀씩 가져가면 된다. -> 2048픽셀, 128청크 + Command
-	/// 
-	/// 데이터를 받아가기 시작한 시점에서 drawcommand가 캔버스에 적용되지 않도록 큐의 길이 제한(50)을 없애고,
-	/// 데이터를 모두 받아간 시점에서 큐의 길이 제한을 넘은 데이터를 처리하여 캔버스에 적용할 수 있도록 한다.
-	/// 
-	/// 데이터를 받아가는 동안에는 캔버스의 정보에는 락이 필요 없다. (수정되지 않기 때문)
-	/// drawcommand를 받아가는 동안에는 락을 건다.
-	/// 
-	/// drawcommand도 분할해서 전송할 것이 아니라면 하나의 drawcommand는 40바이트 이내여야한다.
+	/// chunkidx 0 ~ 127 : canvas, 128 ~ 137 : drawcommand.
+	/// canvas 정보를 가져가는건 2048픽셀씩 가져가면 된다.
+	/// drawcommand는 최대 10개 저장하므로 10청크에 각각 넣는다.
 	/// 
 	/// </summary>
 	/// <param name="out_"></param>
 	bool GetData(const unsigned short chunkidx_, std::string& out_)
 	{
-		if (chunkidx_ >= MAX_CHUNKS_ON_CANVAS_INFO)
+		if (chunkidx_ >= MAX_CHUNKS_ON_CANVAS_INFO + MAX_CHUNKS_ON_DRAWCOMMAND)
 		{
 			return false;
 		}
@@ -325,7 +317,7 @@ public:
 		SerializeLib slib;
 
 		// ----- Texture -----
-		if (chunkidx_ < MAX_CHUNKS_ON_CANVAS_INFO - 1)
+		if (chunkidx_ < MAX_CHUNKS_ON_CANVAS_INFO)
 		{
 			uint32_t PIXELS_ON_CHUNK = 2048;
 			uint32_t size = PIXELS_ON_CHUNK * sizeof(Color) + sizeof(uint16_t); // pixel * 256 + chunkidx
@@ -361,11 +353,19 @@ public:
 
 		}
 		// ----- Commands -----
-		else if (chunkidx_ == MAX_CHUNKS_ON_CANVAS_INFO - 1)
+		else
 		{
-			uint32_t size = sizeof(uint16_t);
+			uint32_t size = sizeof(uint16_t); // drawkey idx
+			uint16_t commandidx = chunkidx_ - MAX_CHUNKS_ON_CANVAS_INFO;
 
-			for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
+			auto itr = DrawKeys.begin();
+			int cnt = 0;
+			while (cnt++ < commandidx && itr != DrawKeys.end())
+			{
+				itr++;
+			}
+
+			if (itr != DrawKeys.end())
 			{
 				auto mapitr = DrawCommands.find(*itr);
 
@@ -384,8 +384,7 @@ public:
 				return false;
 			}
 
-			uint16_t commandCount = DrawKeys.size();
-			bRet = bRet && slib.Push(commandCount);
+			bRet = bRet && slib.Push(commandidx);
 
 			if (!bRet)
 			{
@@ -393,7 +392,7 @@ public:
 				return false;
 			}
 
-			for (auto itr = DrawKeys.begin(); itr != DrawKeys.end(); itr++)
+			if (itr != DrawKeys.end())
 			{
 				bRet = slib.Push(*itr);
 
@@ -432,7 +431,6 @@ public:
 					}
 				}
 			}
-
 		}
 
 		out_.resize(slib.GetSize());

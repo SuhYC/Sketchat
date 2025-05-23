@@ -160,6 +160,16 @@ public:
 		return Read_Unlock();
 	}
 
+	void CutTheLine(uint16_t userindex_, uint16_t drawNum_)
+	{
+		uint32_t drawkey = ((uint32_t)userindex_ << 16) | drawNum_;
+
+		m_CommandStack.Push(drawkey);
+
+		NotifyDrawEndToAll(userindex_, drawNum_);
+
+	}
+
 	/// <summary>
 	/// 최근 완료된 드래그를 실행취소한다. 
 	/// 쓰기락을 걸고 해제한다.
@@ -273,7 +283,7 @@ public:
 		{
 			if (m_rwlock.compare_exchange_weak(expected, expected - 1))
 			{
-				std::cout << "Room::Read_Unlock : 락 품!\n";
+				//std::cout << "Room::Read_Unlock : 락 품!\n";
 				return true;
 			}
 		}
@@ -297,13 +307,13 @@ public:
 	/// 512 * 512 만 하더라도 25만바이트 이상.
 	/// 픽셀 하나의 정보를 3바이트로 줄여도 78만 바이트 가량을 송신해야한다.
 	///
-	/// 캔버스를 1024 청크로 분류하여 데이터를 256픽셀마다 요청한다.
+	/// 캔버스를 128 청크로 분류하여 데이터를 2048픽셀마다 요청한다.
 	/// 먼저 0번 청크를 요청하기 전, 읽기중인 상태를 기록한다.
 	/// (읽는 중에는 DrawCommand가 생겨도 캔버스를 수정하거나 전파하지 않고 따로 큐에 담는다.)
-	/// 1023번 청크까지 요청이 완료되면 1024번으로 DrawCommand 데이터를 요청하고 읽는중 상태를 조정한다.
+	/// 127번 청크까지 요청이 완료되면 128번으로 DrawCommand 데이터를 요청하고 읽는중 상태를 조정한다.
 	/// (여러명이 요청하고 있었을 수도 있으니까.)
 	/// 
-	/// 1025개의 청크를 송신하려다보니 링버퍼가 가득차서 한번에 요청할 수 없을 수도 있다.
+	/// 138개의 청크를 송신하려다보니 링버퍼가 가득차서 한번에 요청할 수 없을 수도 있다.
 	/// 그러므로 JobQueue를 만들어 송신이 끝나지 못한 작업에 대한 정보를 기록한다.
 	/// </summary>
 	/// <param name="userindex_"></param>
@@ -316,18 +326,18 @@ public:
 			return false;
 		}
 
-		// DrawCommand
-		if (chunkidx_ == MAX_CHUNKS_ON_CANVAS_INFO - 1)
+		// Canvas
+		if (chunkidx_ < MAX_CHUNKS_ON_CANVAS_INFO)
 		{
-			if (!SendInfoFunc(userindex_, InfoType::ROOM_DRAWCOMMAND_INFO, msg))
+			if (!SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg))
 			{
 				return false;
 			}
 		}
-		// Canvas
+		// DrawCommand
 		else
 		{
-			if (!SendInfoFunc(userindex_, InfoType::ROOM_CANVAS_INFO, msg))
+			if (!SendInfoFunc(userindex_, InfoType::ROOM_DRAWCOMMAND_INFO, msg))
 			{
 				return false;
 			}
@@ -432,7 +442,7 @@ private:
 		{
 			if (m_rwlock.compare_exchange_weak(expected, expected + 1))
 			{
-				std::cout << "Room::Try_Read_Lock : 락 검!\n";
+				//std::cout << "Room::Try_Read_Lock : 락 검!\n";
 				return true;
 			}
 		}
