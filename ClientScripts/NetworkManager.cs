@@ -91,6 +91,7 @@ public class NetworkManager : MonoBehaviour
     {
         try
         {
+            Application.runInBackground = true;
             _tcpClient = new TcpClient();
             _tcpClient.NoDelay = true;
             await _tcpClient.ConnectAsync(host, port);
@@ -184,6 +185,7 @@ public class NetworkManager : MonoBehaviour
 
             await _stream.WriteAsync(_SendingData, 0, size);
             //Debug.Log($"Networkmanager::SendIO : SendMsg size:{size}");
+            await Task.Delay(30); // 과도한 요청 방지
         }
     }
 

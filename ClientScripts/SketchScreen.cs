@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 public class SketchScreen : MonoBehaviour
 {
+    public const int MAX_VERTEX_ON_DRAWCOMMAND = 2000;
+
 
     private static SketchScreen _instance;
     public static SketchScreen Instance
@@ -24,6 +26,8 @@ public class SketchScreen : MonoBehaviour
 
     private Vector2Int? lastDrawPosition = null;
     private ushort drawnum = 0;
+
+    private ushort vertexCount = 0;
 
     private void Awake()
     {
@@ -47,7 +51,7 @@ public class SketchScreen : MonoBehaviour
     }
 
 
-    void Update()
+    async void Update()
     {
         if (Input.GetMouseButton(0))
         {
@@ -69,17 +73,34 @@ public class SketchScreen : MonoBehaviour
                 int y = Mathf.Clamp((int)(py * texture.height), 0, texture.height - 1);
                 Vector2Int currentPos = new Vector2Int(x, y);
 
-                if (lastDrawPosition == null ||
-                    currentPos.x != lastDrawPosition?.x || currentPos.y != lastDrawPosition?.y)
+                if (lastDrawPosition == null)
                 {
-                    if(lastDrawPosition == null)
+                    await PacketMaker.Instance.ReqDrawStart();
+                }
+                else if (currentPos.x != lastDrawPosition?.x || currentPos.y != lastDrawPosition?.y)
+                {
+                    bool bRet;
+
+                    if (vertexCount > MAX_VERTEX_ON_DRAWCOMMAND)
                     {
-                        Task<bool> startTask = PacketMaker.Instance.ReqDrawStart();
-                        startTask.Wait();
+                        await PacketMaker.Instance.ReqCutTheLine(drawnum);
+                        drawnum++;
+
+                        vertexCount = 0;
+                        bRet = await PacketMaker.Instance.ReqDraw(drawnum, lastDrawPosition.Value, brushSize, drawColor);
+
+                        if (bRet)
+                        {
+                            vertexCount++;
+                        }
                     }
 
-                    Task<bool> task = PacketMaker.Instance.ReqDraw(drawnum, currentPos, brushSize, drawColor);
-                    task.Wait();
+                    bRet = await PacketMaker.Instance.ReqDraw(drawnum, currentPos, brushSize, drawColor);
+
+                    if (bRet)
+                    {
+                        vertexCount++;
+                    }
                 }
 
                 lastDrawPosition = currentPos;
@@ -87,10 +108,10 @@ public class SketchScreen : MonoBehaviour
         }
         else if (lastDrawPosition != null)
         {
-            Task<bool> task = PacketMaker.Instance.ReqDrawEnd(drawnum);
-            task.Wait();
+            await PacketMaker.Instance.ReqDrawEnd(drawnum);
 
             drawnum++;
+            vertexCount = 0;
             lastDrawPosition = null;
         }
     }

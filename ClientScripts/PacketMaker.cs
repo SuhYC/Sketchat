@@ -10,7 +10,7 @@ public class PacketMaker
     private static PacketMaker _instance;
 
     private float _drawLastSendTime = 0f;
-    private float _sendInterval = 0.03f;
+    private float _sendInterval = 0.0f;
 
     public static PacketMaker Instance
     {
@@ -221,6 +221,36 @@ public class PacketMaker
 
         byte[] req = null;
         if(!serializer.Serialize(reqmsg, ref req))
+        {
+            return false;
+        }
+
+        NetworkManager.Instance.PushReq(reqmsg);
+        await NetworkManager.Instance.SendMsg(req, (uint)req.Length);
+
+        return true;
+    }
+
+    public async Task<bool> ReqCutTheLine(ushort drawNum)
+    {
+        Serializer.DrawEndParameter stParam = new Serializer.DrawEndParameter();
+
+        stParam.drawNum = drawNum;
+
+        Serializer serializer = new Serializer(Serializer.ActivationMode.SLIB_ONLY);
+        Serializer.ReqMessage reqmsg = new Serializer.ReqMessage();
+
+        if (!serializer.Serialize(stParam, ref reqmsg.payLoad) || reqmsg.payLoad.Length > Serializer.MAX_PACKET_SIZE)
+        {
+            return false;
+        }
+
+        reqmsg.payLoadSize = (uint)reqmsg.payLoad.Length;
+        reqmsg.reqNo = ++_reqNo;
+        reqmsg.type = Serializer.ReqType.CUT_THE_LINE;
+
+        byte[] req = null;
+        if (!serializer.Serialize(reqmsg, ref req))
         {
             return false;
         }

@@ -61,18 +61,24 @@ public class CommandStack
 
     /// <summary>
     /// DrawKey는 drawNum과 userNum을 바이트상으로 연결하여 2바이트 + 2바이트 = 4바이트로 만든 데이터이다.
+    /// 
+    /// bHasToRenew를 false로 입력하면 스케치스크린을 갱신하지 않는다.
+    /// (DrawCommand단위로 받는 입장후 첫 초기화에는 false로 입력해주어야 로딩 시간이 줄어든다.)
     /// </summary>
     /// <param name="DrawKey"></param>
     /// <param name="vertex"></param>
-    public void AddVertexToCommand(uint DrawKey, Vector2Int vertex, Color color, float width)
+    public void AddVertexToCommand(uint DrawKey, Vector2Int vertex, Color color, float width, bool bHasToRenew = true)
     {
         DrawCommand command;
 
-        if(DrawCommands.TryGetValue(DrawKey, out command))
+        if (DrawCommands.TryGetValue(DrawKey, out command))
         {
             command.Push(vertex);
 
-            SketchScreen.Instance.DrawLine(command.vertices[command.size - 2], vertex, width, color);
+            if(bHasToRenew)
+            {
+                SketchScreen.Instance.DrawLine(command.vertices[command.size - 2], vertex, width, color);
+            }
         }
         else
         {
@@ -80,7 +86,10 @@ public class CommandStack
             command.Push(vertex);
             DrawCommands.Add(DrawKey, command);
 
-            SketchScreen.Instance.DrawAt(vertex.x, vertex.y, width, color);
+            if(bHasToRenew)
+            {
+                SketchScreen.Instance.DrawAt(vertex.x, vertex.y, width, color);
+            }
         }
     }
 
@@ -148,7 +157,7 @@ public class CommandStack
             if(!DrawCommands.TryGetValue(key, out command))
             {
                 Debug.Log($"CommandStack::GetRenewedTexture : command[{key}] null ref.");
-                break;
+                continue;
             }
 
             DoCommand(texture, command);

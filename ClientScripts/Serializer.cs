@@ -38,6 +38,7 @@ public class Serializer
         DRAW_START,
         DRAW,
         DRAW_END,
+        CUT_THE_LINE,
         UNDO,
         REQ_CANVAS_INFO,
         CHAT,
@@ -212,9 +213,9 @@ public class Serializer
 
     public struct RoomDrawCommandInfo
     {
-        public uint[] drawkeys;
-        public ushort CountOfCommands;
-        public DrawCommand[] CommandInfos;
+        public ushort commandIdx;
+        public uint drawkey;
+        public DrawCommand drawCommand;
     }
 
     public class SerializeLib
@@ -953,55 +954,49 @@ public class Serializer
         dlib.Init(bytes_, (int)size_);
 
         // ----- Commands -----
-        bool bRet = dlib.Get(ref res_.CountOfCommands);
+        bool bRet = dlib.Get(ref res_.commandIdx);
 
         if (!bRet)
         {
             return false;
         }
 
-        res_.drawkeys = new uint[res_.CountOfCommands];
-        res_.CommandInfos = new DrawCommand[res_.CountOfCommands];
+        int verticesSize = 0;
 
-        for (int commandidx = 0; commandidx < res_.CountOfCommands; commandidx++)
+        uint key = 0;
+        byte r = 0, g = 0, b = 0;
+        float width = 0f;
+
+        bRet = dlib.Get(ref key) &&
+            dlib.Get(ref r) &&
+            dlib.Get(ref g) &&
+            dlib.Get(ref b) &&
+            dlib.Get(ref width) &&
+            dlib.Get(ref verticesSize);
+
+        if(!bRet)
         {
-            int verticesSize = 0;
+            return false;
+        }
 
-            uint key = 0;
-            byte r = 0, g = 0, b = 0;
-            float width = 0f;
+        res_.drawCommand = new DrawCommand(new Color((float)r / 255, (float)g / 255, (float)b / 255, 1f), width, verticesSize);
+        res_.drawkey = key;
+        res_.drawCommand.size = verticesSize;
 
-            bRet = dlib.Get(ref key) &&
-                dlib.Get(ref r) &&
-                dlib.Get(ref g) &&
-                dlib.Get(ref b) &&
-                dlib.Get(ref width) &&
-                dlib.Get(ref verticesSize);
 
-            res_.CommandInfos[commandidx] = new DrawCommand(new Color((float)r / 255, (float)g / 255, (float)b / 255, 1f), width);
-            res_.drawkeys[commandidx] = key;
+        for (int vertexidx = 0; vertexidx < verticesSize; vertexidx++)
+        {
+            short xval = 0, yval = 0;
+
+            bRet = bRet && dlib.Get(ref xval) && dlib.Get(ref yval);
 
             if (!bRet)
             {
                 return false;
             }
 
-            res_.CommandInfos[commandidx].vertices = new Vector2Int[verticesSize];
-
-            for (int vertexidx = 0; vertexidx < verticesSize; vertexidx++)
-            {
-                short xval = 0, yval = 0;
-
-                bRet = bRet && dlib.Get(ref xval) && dlib.Get(ref yval);
-
-                if (!bRet)
-                {
-                    return false;
-                }
-
-                res_.CommandInfos[commandidx].vertices[vertexidx].x = xval;
-                res_.CommandInfos[commandidx].vertices[vertexidx].y = yval;
-            }
+            res_.drawCommand.vertices[vertexidx].x = xval;
+            res_.drawCommand.vertices[vertexidx].y = yval;
         }
 
         return true;

@@ -45,6 +45,9 @@ public class ResHandler
         ResHandleFunc DrawEnd = HandleDrawEndResponse;
         _resHandleFuncs.Add(ReqType.DRAW_END, DrawEnd);
 
+        ResHandleFunc CutTheLine = HandleCutTheLineResponse;
+        _resHandleFuncs.Add(ReqType.CUT_THE_LINE, CutTheLine);
+
         ResHandleFunc Undo = HandleUndoResponse;
         _resHandleFuncs.Add(ReqType.UNDO, Undo);
 
@@ -307,6 +310,13 @@ public class ResHandler
         return;
     }
 
+    private async Task HandleCutTheLineResponse(ReqMessage reqmsg_, ResMessage resmsg_)
+    {
+        await Task.CompletedTask;
+
+        return;
+    }
+
     private async Task HandleUndoResponse(ReqMessage reqmsg_, ResMessage resmsg_)
     {
         await Task.CompletedTask; 
@@ -446,15 +456,12 @@ public class ResHandler
             return;
         }
 
-        for (int commandidx = 0; commandidx < stParam.CountOfCommands; commandidx++)
+        uint drawkey = stParam.drawkey;
+        for (int vertexidx = 0; vertexidx < stParam.drawCommand.vertices.Length; vertexidx++)
         {
-            uint drawkey = stParam.drawkeys[commandidx];
-            for (int vertexidx = 0; vertexidx < stParam.CommandInfos[commandidx].vertices.Length; vertexidx++)
-            {
-                CommandStack.Instance.AddVertexToCommand(drawkey, stParam.CommandInfos[commandidx].vertices[vertexidx], stParam.CommandInfos[commandidx].DrawColor, stParam.CommandInfos[commandidx].DrawWidth);
-            }
-
-            CommandStack.Instance.Push(drawkey);
+            CommandStack.Instance.AddVertexToCommand(drawkey, stParam.drawCommand.vertices[vertexidx], stParam.drawCommand.DrawColor, stParam.drawCommand.DrawWidth, false);
         }
+
+        CommandStack.Instance.Push(drawkey);
     }
 }

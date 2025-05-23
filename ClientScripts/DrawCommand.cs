@@ -23,6 +23,13 @@ public class DrawCommand
         vertices = new Vector2Int[2];
         size = 0;
     }
+    public DrawCommand(Color col, float width, int cap)
+    {
+        DrawColor = col;
+        DrawWidth = width;
+        vertices = new Vector2Int[cap];
+        size = 0;
+    }
 
     public void Push(Vector2Int vertex)
     {
