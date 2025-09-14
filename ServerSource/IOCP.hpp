@@ -241,8 +241,6 @@ private:
 			case eIOOperation::SEND:
 				DoSend(pOverlapped, ioSize);
 			}
-
-			// SendMsg Logic
 		}
 
 		return;

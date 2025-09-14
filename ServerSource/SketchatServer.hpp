@@ -186,7 +186,7 @@ private:
 				// 처리 완료. 실패든 성공이든 Job이 끝났다.
 				if (eRet == InfoType::REQ_SUCCESS || eRet == InfoType::REQ_FAILED)
 				{
-					delete pJob;
+					m_JobFactory.DeallocateJob(pJob);
 				}
 				// 링버퍼 용량 문제로 잠시 후 이어서 해야하는 경우 등.
 				else if (eRet == InfoType::NOT_FINISHED)
@@ -198,7 +198,7 @@ private:
 				else
 				{
 					std::cerr << "JobThread : Undefined Behavior[" << static_cast<int>(eRet) << "] occurred\n";
-					delete pJob;
+					m_JobFactory.DeallocateJob(pJob);
 				}
 			}
 			else

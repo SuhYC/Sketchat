@@ -15,6 +15,16 @@
 #include <string_view>
 #include <optional>
 
+#include "concurrent_queue.h"
+
+#include <typeinfo>
+#include <variant>
+
+struct DIStruct
+{
+	UserManager* um;
+	RoomManager* rm;
+};
 
 class Job
 {
@@ -46,7 +56,6 @@ class RoomCreationJob : public Job
 {
 public:
 	RoomCreationJob(uint16_t userindex_, uint32_t reqNo_, UserManager* um, RoomManager* rm) : Job(userindex_, reqNo_, um, rm), m_param() {}
-	~RoomCreationJob() override {}
 
 	bool Parse(const std::string& param_) override
 	{
@@ -67,7 +76,7 @@ public:
 
 		if (pUser == nullptr || pUser->GetRoomIdx() != -1)
 		{
-			std::cout << "RoomCreationJob::Execute : invalid req\n";
+			std::cerr << "RoomCreationJob::Execute : invalid req\n";
 
 			return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
 		}
@@ -297,7 +306,7 @@ public:
 	{
 		User* pUser = m_userManager->GetUserByConnIndex(m_userindex);
 		
-		if (pUser == nullptr || pUser->GetState() == 1)
+		if (pUser == nullptr)
 		{
 			std::cerr << "DrawstartJob::Execute : invalid req\n";
 			return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
@@ -315,6 +324,7 @@ public:
 
 		if (!bRet)
 		{
+			std::cerr << "DrawStartJob::Execute : User[" << m_userindex << "] Cant lock r-lock\n";
 			return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
 		}
 
@@ -396,7 +406,54 @@ public:
 		}
 
 		pRoom->DrawEnd(m_userindex, m_param.drawNum);
+
 		pUser->SetIdle();
+
+		return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_SUCCESS);
+	}
+
+private:
+	DrawEndParameter m_param;
+};
+
+/// <summary>
+/// 읽기락의 상태를 변화시키지 않고 drawnum을 변화시킬 동작.
+/// 획이 너무 길어지면 송신하기 어렵기 때문에 획을 일정길이마다 자르기 위함이다.
+/// </summary>
+class CutTheLineJob : public Job
+{
+public:
+	CutTheLineJob(uint16_t userindex_, uint32_t reqNo_, UserManager* um, RoomManager* rm) : Job(userindex_, reqNo_, um, rm), m_param() {}
+
+	bool Parse(const std::string& param_) override
+	{
+		Serializer serializer;
+
+		if (!serializer.Deserialize(param_, m_param))
+		{
+			std::cerr << "DrawEndJob::Parse : Failed to Parse\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	InfoType Execute() override
+	{
+		User* pUser = m_userManager->GetUserByConnIndex(m_userindex);
+		Room* pRoom = m_roomManager->GetRoomByIndex(pUser->GetRoomIdx());
+
+		if (pRoom == nullptr)
+		{
+			return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
+		}
+
+		if (pUser->GetState() != 1) // 그래도 그리는 중이어야한다.
+		{
+			return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_FAILED);
+		}
+
+		pRoom->CutTheLine(m_userindex, m_param.drawNum);
 
 		return SendResultMsg(m_userindex, m_reqNo, InfoType::REQ_SUCCESS);
 	}
@@ -477,7 +534,7 @@ public:
 			return InfoType::REQ_FAILED;
 		}
 
-		while (chunkidx < MAX_CHUNKS_ON_CANVAS_INFO)
+		while (chunkidx < MAX_CHUNKS_ON_CANVAS_INFO + MAX_CHUNKS_ON_DRAWCOMMAND)
 		{
 			if (!pRoom->NotifyCanvasInfo(m_userindex, chunkidx))
 			{
@@ -535,30 +592,139 @@ private:
 };
 
 /// <summary>
+/// 선언한 모든 타입의 Job 파생클래스를 담을 것.
+/// 해당 variant를 바탕으로 가장 크기가 큰 Job을 확인하는 로직.
+/// </summary>
+using Jobs = std::variant<
+	// ----- 작업이 추가될 때마다 추가해주어야함
+	RoomCreationJob,
+	EnterRoomJob,
+	ExitRoomJob,
+	SetNicknameJob,
+	ReqRoomInfoJob,
+	DrawStartJob,
+	DrawJob,
+	DrawEndJob,
+	CutTheLineJob,
+	UndoJob,
+	ReqCanvasInfoJob,
+	ChatJob
+>;
+
+const uint32_t MAX_JOB_SIZE = sizeof(Jobs);
+const uint32_t MEMORY_POOL_SIZE = 10;
+
+class JobMemoryPool final
+{
+public:
+	JobMemoryPool()
+	{
+		try
+		{
+			void* block = nullptr;
+
+			for (int i = 0; i < MEMORY_POOL_SIZE; i++)
+			{
+				block = ::operator new(MAX_JOB_SIZE, std::nothrow);
+				if (block != nullptr)
+				{
+					FreeList.push(block);
+				}
+			}
+		}
+		catch (std::bad_alloc& e)
+		{
+			std::cerr << "JobMemoryPool::Constructor : Failed to Allocate Memory Block.\n";
+			return;
+		}
+	}
+	~JobMemoryPool()
+	{
+		void* block = nullptr;
+		while (!FreeList.empty())
+		{
+			if (FreeList.try_pop(block))
+			{
+				if (block != nullptr)
+				{
+					::operator delete(block);
+				}
+			}
+		}
+	}
+
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Job, T>::value, Job*>::type
+		Allocate(uint16_t userindex_, uint32_t reqNo_, DIStruct& stDI_)
+	{
+		if (sizeof(T) > MAX_JOB_SIZE)
+		{
+			std::cerr << "JobMemoryPool::Allocate : Check union Jobs. JobType : " << typeid(T).name() << "\n";
+			return nullptr;
+		}
+
+		void* memory = nullptr;
+
+		if (!FreeList.try_pop(memory))
+		{
+			memory = ::operator new(MAX_JOB_SIZE, std::nothrow);
+			if (memory == nullptr)
+			{
+				std::cerr << "JobMemoryPool::Allocate : Not Enough Mem.\n";
+				return nullptr;
+			}
+		}
+
+		Job* pRet = new (memory) T(userindex_, reqNo_, stDI_.um, stDI_.rm);
+
+		return pRet;
+	}
+
+	void Deallocate(Job* job_)
+	{
+		if (job_ == nullptr)
+		{
+			return;
+		}
+
+		job_->~Job();
+
+		FreeList.push(job_);
+		return;
+	}
+
+private:
+	Concurrency::concurrent_queue<void*> FreeList;
+
+};
+
+/// <summary>
 /// DI + Parsing
 /// </summary>
 class JobFactory
 {
 public:
-	void Init(UserManager* um, RoomManager* rm)
+	void Init(UserManager* um_, RoomManager* rm_)
 	{
-		m_userManager = um;
-		m_roomManager = rm;
+		m_DIStruct.um = um_;
+		m_DIStruct.rm = rm_;
 
 		createFuncs.resize(static_cast<size_t>(ReqType::LAST) + 1);
 
-		createFuncs[static_cast<size_t>(ReqType::CREATE_ROOM)] = &JobFactory::CreateRoomCreationJob;
-		createFuncs[static_cast<size_t>(ReqType::ENTER_ROOM)] = &JobFactory::CreateEnterRoomJob;
-		createFuncs[static_cast<size_t>(ReqType::REQ_ROOM_INFO)] = &JobFactory::CreateReqRoomInfoJob;
-		createFuncs[static_cast<size_t>(ReqType::REQ_CANVAS_INFO)] = &JobFactory::CreateReqCanvasInfoJob;
-		createFuncs[static_cast<size_t>(ReqType::EXIT_ROOM)] = &JobFactory::CreateExitRoomJob;
-		//createFuncs[static_cast<size_t>(ReqType::EDIT_ROOM_SETTING)] = &JobFactory::CreateRoomCreationJob;
-		createFuncs[static_cast<size_t>(ReqType::SET_NICKNAME)] = &JobFactory::CreateSetNicknameJob;
-		createFuncs[static_cast<size_t>(ReqType::DRAW_START)] = &JobFactory::CreateDrawStartJob;
-		createFuncs[static_cast<size_t>(ReqType::DRAW)] = &JobFactory::CreateDrawJob;
-		createFuncs[static_cast<size_t>(ReqType::DRAW_END)] = &JobFactory::CreateDrawEndJob;
-		createFuncs[static_cast<size_t>(ReqType::UNDO)] = &JobFactory::CreateUndoJob;
-		createFuncs[static_cast<size_t>(ReqType::CHAT)] = &JobFactory::CreateChatJob;
+		Register<RoomCreationJob>(ReqType::CREATE_ROOM);
+		Register<EnterRoomJob>(ReqType::ENTER_ROOM);
+		Register<ReqRoomInfoJob>(ReqType::REQ_ROOM_INFO);
+		Register<ReqCanvasInfoJob>(ReqType::REQ_CANVAS_INFO);
+		Register<ExitRoomJob>(ReqType::EXIT_ROOM);
+		//Register<EditRoomSettingJob>(ReqType::EDIT_ROOM_SETTING);
+		Register<SetNicknameJob>(ReqType::SET_NICKNAME);
+
+		Register<DrawStartJob>(ReqType::DRAW_START);
+		Register<DrawJob>(ReqType::DRAW);
+		Register<DrawEndJob>(ReqType::DRAW_END);
+		Register<CutTheLineJob>(ReqType::CUT_THE_LINE);
+		Register<UndoJob>(ReqType::UNDO);
+		Register<ChatJob>(ReqType::CHAT);
 
 		return;
 	}
@@ -582,7 +748,7 @@ public:
 
 		auto func = createFuncs[static_cast<size_t>(msg.reqType)];
 
-		if (func == nullptr)
+		if (!func)
 		{
 			std::cerr << "JobFactory::CreateJob : Cant Find CreateJob Func\n";
 			return nullptr;
@@ -590,7 +756,7 @@ public:
 
 		std::string payLoad(msg.payLoad, msg.payLoadSize);
 
-		Job* pRet = (this->*(func))(userindex_, msg.reqNo);
+		Job* pRet = func(userindex_, msg.reqNo);
 
 		if (pRet == nullptr || !pRet->Parse(payLoad))
 		{
@@ -603,64 +769,49 @@ public:
 
 	Job* CreateExitRoomJob(uint16_t userindex_, uint32_t reqNo_)
 	{
-		return new ExitRoomJob(userindex_, reqNo_, m_userManager, m_roomManager);
+		Job* pRet = m_pool.Allocate<ExitRoomJob>(userindex_, reqNo_, m_DIStruct);
+
+		if (pRet == nullptr)
+		{
+			std::cerr << "JobFactory::CreateExitRoomJob : Failed to Create Job\n";
+		}
+
+		return pRet;
+	}
+
+	void DeallocateJob(Job* pJob)
+	{
+		m_pool.Deallocate(pJob);
+
+		return;
 	}
 
 private:
-	Job* CreateRoomCreationJob(uint16_t userindex_, uint32_t reqNo_)
+
+	/// <summary>
+	/// 추가한 작업객체와 요청코드를 연결하는 함수.
+	/// 요청코드에 맞는 작업객체를 생성하는 람다식을 넘긴다.
+	/// </summary>
+	/// <typeparam name="T">Job의 파생클래스 타입</typeparam>
+	/// <param name="eReqType_">요청코드</param>
+	/// <returns></returns>
+	template<typename T>
+	typename std::enable_if<std::is_base_of<Job, T>::value, void>::type
+		Register(ReqType eReqType_)
 	{
-		return new RoomCreationJob(userindex_, reqNo_, m_userManager, m_roomManager);
+		createFuncs[static_cast<int32_t>(eReqType_)] =
+			[this](uint16_t userindex_, uint32_t reqNo_) -> Job* {
+			return m_pool.Allocate<T>(userindex_, reqNo_, m_DIStruct);
+			};
 	}
 
-	Job* CreateEnterRoomJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new EnterRoomJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
 
-	Job* CreateSetNicknameJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new SetNicknameJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateReqRoomInfoJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new ReqRoomInfoJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateReqCanvasInfoJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new ReqCanvasInfoJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateDrawStartJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new DrawStartJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateDrawJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new DrawJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateDrawEndJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new DrawEndJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateUndoJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new UndoJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
-
-	Job* CreateChatJob(uint16_t userindex_, uint32_t reqNo_)
-	{
-		return new ChatJob(userindex_, reqNo_, m_userManager, m_roomManager);
-	}
+	DIStruct m_DIStruct;
 
 	UserManager* m_userManager = nullptr;
 	RoomManager* m_roomManager = nullptr;
 
-	typedef Job* (JobFactory::* CREATE_JOB_FUNC)(uint16_t, uint32_t);
+	JobMemoryPool m_pool;
 
-	std::vector<CREATE_JOB_FUNC> createFuncs;
+	std::vector<std::function<Job* (uint16_t, uint32_t)>> createFuncs;
 };

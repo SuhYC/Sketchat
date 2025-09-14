@@ -162,7 +162,7 @@ public:
 			return false;
 		}
 
-		std::cout << "Connection::SendIO : SendMsg : " << datasize << "bytes.\n";
+		//std::cout << "Connection::SendIO : SendMsg : " << datasize << "bytes.\n";
 
 		return true;
 	}
